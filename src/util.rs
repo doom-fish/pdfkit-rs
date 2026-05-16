@@ -16,6 +16,10 @@ pub(crate) fn c_string(value: &str) -> Result<CString> {
     })
 }
 
+pub(crate) fn option_c_string(value: Option<&str>) -> Result<Option<CString>> {
+    value.map(c_string).transpose()
+}
+
 pub(crate) fn path_to_c_string(path: &Path) -> Result<CString> {
     c_string(path.to_string_lossy().as_ref())
 }
@@ -35,7 +39,8 @@ pub(crate) fn status_result(status: i32, error_ptr: *mut c_char) -> Result<()> {
         return Ok(());
     }
 
-    let message = take_string(error_ptr).unwrap_or_else(|| format!("PDFKit bridge error {status}"));
+    let message =
+        take_string(error_ptr).unwrap_or_else(|| format!("PDFKit bridge error {status}"));
     Err(PdfKitError::new(status, message))
 }
 

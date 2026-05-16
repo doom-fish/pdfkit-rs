@@ -1,31 +1,22 @@
-use std::path::PathBuf;
+#[path = "common/mod.rs"]
+mod support;
 
-use pdfkit::prelude::*;
 
 fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("examples/assets/hello.pdf");
-    let document = PdfDocument::from_url(&path)?;
-    let text = document
-        .string()
-        .ok_or_else(|| std::io::Error::other("document string was empty"))?;
-    let first_page = document
-        .page(0)
-        .ok_or_else(|| std::io::Error::other("missing first page"))?;
-    let bounds = first_page.bounds(DisplayBox::CropBox);
+    let document = support::fixture_document()?;
+    let info = document.info()?;
+    let output = support::output_dir().join("hello-copy.pdf");
+    document.write_to_url(&output)?;
 
     if document.page_count() != 1 {
         return Err(std::io::Error::other("unexpected page count").into());
     }
-    if !text.contains("Hello PDFKit") {
-        return Err(std::io::Error::other("expected fixture text missing").into());
-    }
-    if bounds.width <= 0.0 || bounds.height <= 0.0 {
-        return Err(std::io::Error::other("invalid page bounds").into());
+    if !output.exists() {
+        return Err(std::io::Error::other("expected written document").into());
     }
 
-    println!("page count: {}", document.page_count());
-    println!("page label: {:?}", first_page.label());
-    println!("page bounds: {bounds:?}");
+    println!("pages={} encrypted={} page_class={}", document.page_count(), info.is_encrypted, info.page_class);
+    println!("attributes={:?}", document.attributes()?);
     println!("✅ pdfkit document OK");
     Ok(())
 }

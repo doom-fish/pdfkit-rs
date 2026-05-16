@@ -8,6 +8,40 @@ pub struct PdfRect {
     pub height: f64,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Deserialize)]
+pub struct PdfPoint {
+    pub x: f64,
+    pub y: f64,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Deserialize)]
+pub struct PdfSize {
+    pub width: f64,
+    pub height: f64,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Deserialize)]
+pub struct PdfEdgeInsets {
+    pub top: f64,
+    pub left: f64,
+    pub bottom: f64,
+    pub right: f64,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Deserialize)]
+pub struct PdfColor {
+    pub red: f64,
+    pub green: f64,
+    pub blue: f64,
+    pub alpha: f64,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+pub struct PdfTextRange {
+    pub location: usize,
+    pub length: usize,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(i32)]
 pub enum DisplayBox {
@@ -22,6 +56,112 @@ impl DisplayBox {
     #[must_use]
     pub const fn as_raw(self) -> i32 {
         self as i32
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(i32)]
+pub enum PdfBorderStyle {
+    Solid = 0,
+    Dashed = 1,
+    Beveled = 2,
+    Inset = 3,
+    Underline = 4,
+}
+
+impl PdfBorderStyle {
+    #[must_use]
+    pub const fn from_raw(raw: i32) -> Option<Self> {
+        match raw {
+            0 => Some(Self::Solid),
+            1 => Some(Self::Dashed),
+            2 => Some(Self::Beveled),
+            3 => Some(Self::Inset),
+            4 => Some(Self::Underline),
+            _ => None,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(i32)]
+pub enum PdfDisplayMode {
+    SinglePage = 0,
+    SinglePageContinuous = 1,
+    TwoUp = 2,
+    TwoUpContinuous = 3,
+}
+
+impl PdfDisplayMode {
+    #[must_use]
+    pub const fn from_raw(raw: i32) -> Option<Self> {
+        match raw {
+            0 => Some(Self::SinglePage),
+            1 => Some(Self::SinglePageContinuous),
+            2 => Some(Self::TwoUp),
+            3 => Some(Self::TwoUpContinuous),
+            _ => None,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(i32)]
+pub enum PdfDisplayDirection {
+    Vertical = 0,
+    Horizontal = 1,
+}
+
+impl PdfDisplayDirection {
+    #[must_use]
+    pub const fn from_raw(raw: i32) -> Option<Self> {
+        match raw {
+            0 => Some(Self::Vertical),
+            1 => Some(Self::Horizontal),
+            _ => None,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(i32)]
+pub enum PdfInterpolationQuality {
+    None = 0,
+    Low = 1,
+    High = 2,
+}
+
+impl PdfInterpolationQuality {
+    #[must_use]
+    pub const fn from_raw(raw: i32) -> Option<Self> {
+        match raw {
+            0 => Some(Self::None),
+            1 => Some(Self::Low),
+            2 => Some(Self::High),
+            _ => None,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(i32)]
+pub enum PdfWidgetControlType {
+    Unknown = -1,
+    PushButton = 0,
+    RadioButton = 1,
+    CheckBox = 2,
+}
+
+impl PdfWidgetControlType {
+    #[must_use]
+    pub const fn from_raw(raw: i32) -> Option<Self> {
+        match raw {
+            -1 => Some(Self::Unknown),
+            0 => Some(Self::PushButton),
+            1 => Some(Self::RadioButton),
+            2 => Some(Self::CheckBox),
+            _ => None,
+        }
     }
 }
 
@@ -53,6 +193,7 @@ pub struct PdfDocumentInfo {
     pub is_encrypted: bool,
     pub is_locked: bool,
     pub permissions_status: i32,
+    pub access_permissions: u64,
     pub allows_printing: bool,
     pub allows_copying: bool,
     pub allows_document_changes: bool,
@@ -60,6 +201,7 @@ pub struct PdfDocumentInfo {
     pub allows_content_accessibility: bool,
     pub allows_commenting: bool,
     pub allows_form_field_entry: bool,
+    pub page_class: String,
 }
 
 impl PdfDocumentInfo {
@@ -82,6 +224,20 @@ pub struct PdfDocumentAttributes {
 }
 
 #[derive(Debug, Clone, Deserialize)]
+pub struct PdfBorderInfo {
+    pub style: i32,
+    pub line_width: f64,
+    pub dash_pattern: Option<Vec<f64>>,
+}
+
+impl PdfBorderInfo {
+    #[must_use]
+    pub fn style_enum(&self) -> Option<PdfBorderStyle> {
+        PdfBorderStyle::from_raw(self.style)
+    }
+}
+
+#[derive(Debug, Clone, Deserialize)]
 pub struct PdfAnnotationInfo {
     pub annotation_type: Option<String>,
     pub bounds: PdfRect,
@@ -90,4 +246,98 @@ pub struct PdfAnnotationInfo {
     pub should_print: bool,
     pub has_appearance_stream: bool,
     pub user_name: Option<String>,
+    pub modification_date: Option<String>,
+    pub color: Option<PdfColor>,
+    pub highlighted: bool,
+    pub action_type: Option<String>,
+    pub border: Option<PdfBorderInfo>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct PdfDestinationInfo {
+    pub page_label: Option<String>,
+    pub page_index: Option<usize>,
+    pub point: PdfPoint,
+    pub zoom: f64,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct PdfAppearanceCharacteristicsInfo {
+    pub control_type: i32,
+    pub background_color: Option<PdfColor>,
+    pub border_color: Option<PdfColor>,
+    pub rotation: i32,
+    pub caption: Option<String>,
+    pub rollover_caption: Option<String>,
+    pub down_caption: Option<String>,
+}
+
+impl PdfAppearanceCharacteristicsInfo {
+    #[must_use]
+    pub fn control_type_enum(&self) -> Option<PdfWidgetControlType> {
+        PdfWidgetControlType::from_raw(self.control_type)
+    }
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct PdfViewInfo {
+    pub display_mode: i32,
+    pub display_direction: i32,
+    pub displays_page_breaks: bool,
+    pub page_break_margins: PdfEdgeInsets,
+    pub display_box: i32,
+    pub displays_as_book: bool,
+    pub displays_rtl: bool,
+    pub background_color: Option<PdfColor>,
+    pub interpolation_quality: i32,
+    pub page_shadows_enabled: bool,
+    pub scale_factor: f64,
+    pub min_scale_factor: f64,
+    pub max_scale_factor: f64,
+    pub auto_scales: bool,
+    pub scale_factor_for_size_to_fit: f64,
+    pub in_markup_mode: bool,
+    pub has_document_view: bool,
+    pub visible_page_count: usize,
+    pub current_page_label: Option<String>,
+}
+
+impl PdfViewInfo {
+    #[must_use]
+    pub fn display_mode_enum(&self) -> Option<PdfDisplayMode> {
+        PdfDisplayMode::from_raw(self.display_mode)
+    }
+
+    #[must_use]
+    pub fn display_direction_enum(&self) -> Option<PdfDisplayDirection> {
+        PdfDisplayDirection::from_raw(self.display_direction)
+    }
+
+    #[must_use]
+    pub fn interpolation_quality_enum(&self) -> Option<PdfInterpolationQuality> {
+        PdfInterpolationQuality::from_raw(self.interpolation_quality)
+    }
+
+    #[must_use]
+    pub fn display_box_enum(&self) -> Option<DisplayBox> {
+        match self.display_box {
+            0 => Some(DisplayBox::MediaBox),
+            1 => Some(DisplayBox::CropBox),
+            2 => Some(DisplayBox::BleedBox),
+            3 => Some(DisplayBox::TrimBox),
+            4 => Some(DisplayBox::ArtBox),
+            _ => None,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct PdfThumbnailViewInfo {
+    pub has_pdf_view: bool,
+    pub background_color: Option<PdfColor>,
+    pub selected_pages_count: usize,
+    pub thumbnail_size: PdfSize,
+    pub maximum_number_of_columns: usize,
+    pub allows_dragging: bool,
+    pub allows_multiple_selection: bool,
 }

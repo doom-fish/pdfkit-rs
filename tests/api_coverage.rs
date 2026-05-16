@@ -46,54 +46,28 @@ fn assert_contains_all(haystack: &str, needles: &[&str]) {
 }
 
 #[test]
-fn pdf_document_surface_is_present() {
-    let header = read_header("PDFDocument");
+fn document_page_selection_outline_annotation_surface_is_present() {
+    let document_header = read_header("PDFDocument");
     assert_contains_all(
-        &header,
+        &document_header,
         &[
-            "- (nullable instancetype)initWithURL:(NSURL *)url",
-            "- (nullable instancetype)initWithData:(NSData *)data",
-            "@property (nonatomic, readonly, nullable) NSURL *documentURL;",
-            "@property (nonatomic, copy, nullable) NSDictionary *documentAttributes;",
-            "@property (nonatomic, readonly) BOOL isEncrypted;",
-            "@property (nonatomic, readonly) BOOL isLocked;",
-            "- (BOOL)unlockWithPassword:(NSString *)password;",
-            "@property (nonatomic, readonly, nullable) NSString *string;",
-            "@property (nonatomic, readonly) NSUInteger pageCount;",
-            "- (nullable PDFPage *)pageAtIndex:(NSUInteger)index;",
+            "- (instancetype)init NS_DESIGNATED_INITIALIZER;",
+            "- (void)insertPage:(PDFPage *)page atIndex:(NSUInteger)index;",
+            "- (nullable PDFSelection *)selectionFromPage:(PDFPage *)startPage atPoint:(PDFPoint)startPoint toPage:(PDFPage *)endPage atPoint:(PDFPoint)endPoint;",
             "@property (nonatomic, strong, nullable) PDFOutline *outlineRoot",
-            "- (BOOL)writeToURL:(NSURL *)url;",
         ],
     );
 
-    let bridge = read_bridge();
-    assert_contains_all(
-        &bridge,
-        &[
-            "pdf_document_new_with_url",
-            "pdf_document_new_with_data",
-            "pdf_document_info_json",
-            "pdf_document_attributes_json",
-            "pdf_document_page_at",
-            "pdf_document_unlock",
-            "pdf_document_write_to_url",
-        ],
-    );
-}
-
-#[test]
-fn pdf_page_and_selection_surface_is_present() {
     let page_header = read_header("PDFPage");
     assert_contains_all(
         &page_header,
         &[
-            "@property (nonatomic, readonly, nullable) NSString *label;",
-            "- (PDFRect)boundsForBox:(PDFDisplayBox)box;",
-            "@property (nonatomic) NSInteger rotation;",
-            "@property (nonatomic, readonly) NSArray<PDFAnnotation*> *annotations;",
-            "@property (nonatomic, readonly) NSUInteger numberOfCharacters;",
-            "@property (nonatomic, readonly, nullable) NSString *string;",
-            "- (nullable PDFSelection *)selectionForRange:(NSRange)range;",
+            "- (nullable PDFAnnotation *)annotationAtPoint:(PDFPoint)point;",
+            "- (nullable PDFSelection *)selectionForRect:(PDFRect)rect;",
+            "- (nullable PDFSelection *)selectionForWordAtPoint:(PDFPoint)point;",
+            "- (nullable PDFSelection *)selectionForLineAtPoint:(PDFPoint)point;",
+            "- (nullable PDFSelection *)selectionFromPoint:(PDFPoint)startPoint toPoint:(PDFPoint)endPoint;",
+            "@class PDFDocument, PDFAnnotation, PDFSelection, PDFAccessibilityNode;",
         ],
     );
 
@@ -101,34 +75,21 @@ fn pdf_page_and_selection_surface_is_present() {
     assert_contains_all(
         &selection_header,
         &[
-            "@property (nonatomic, readonly) NSArray<PDFPage*> *pages;",
-            "@property (nonatomic, readonly, nullable) NSString *string;",
-            "- (PDFRect)boundsForPage:(PDFPage *)page;",
+            "- (NSUInteger)numberOfTextRangesOnPage:(PDFPage *)page",
+            "- (NSRange)rangeAtIndex:(NSUInteger)index onPage:(PDFPage *)page",
+            "- (NSArray<PDFSelection*>*)selectionsByLine",
+            "- (void)addSelection:(PDFSelection *)selection;",
         ],
     );
 
-    let bridge = read_bridge();
-    assert_contains_all(
-        &bridge,
-        &[
-            "pdf_page_bounds",
-            "pdf_page_annotation_at",
-            "pdf_page_selection_for_range",
-            "pdf_selection_page_at",
-            "pdf_selection_bounds_for_page",
-        ],
-    );
-}
-
-#[test]
-fn pdf_outline_and_annotation_surface_is_present() {
     let outline_header = read_header("PDFOutline");
     assert_contains_all(
         &outline_header,
         &[
-            "@property (nonatomic, readonly) NSUInteger numberOfChildren;",
-            "- (nullable PDFOutline *)childAtIndex:(NSUInteger)index;",
-            "@property (nonatomic, copy, nullable) NSString *label;",
+            "- (instancetype)init NS_DESIGNATED_INITIALIZER;",
+            "- (void)insertChild:(PDFOutline *)child atIndex:(NSUInteger)index",
+            "@property (nonatomic, strong, nullable) PDFDestination *destination;",
+            "@property (nonatomic, strong, nullable) PDFAction *action",
         ],
     );
 
@@ -136,10 +97,10 @@ fn pdf_outline_and_annotation_surface_is_present() {
     assert_contains_all(
         &annotation_header,
         &[
-            "@property (nonatomic, copy, nullable) NSString *type;",
-            "@property (nonatomic) PDFRect bounds;",
-            "@property (nonatomic, copy, nullable) NSString *contents",
-            "@property (nonatomic, readonly) BOOL hasAppearanceStream;",
+            "- (instancetype)initWithBounds:(PDFRect)bounds forType:(PDFAnnotationSubtype)annotationType withProperties:(nullable NSDictionary*)properties",
+            "@property (nonatomic, strong, nullable) PDFBorder *border",
+            "@property (nonatomic, strong, nullable) PDFAction *action",
+            "@property (nonatomic, getter=isHighlighted) BOOL highlighted",
         ],
     );
 
@@ -147,9 +108,92 @@ fn pdf_outline_and_annotation_surface_is_present() {
     assert_contains_all(
         &bridge,
         &[
-            "pdf_outline_child_at",
-            "pdf_outline_label_string",
-            "pdf_annotation_info_json",
+            "pdf_document_new",
+            "pdf_document_insert_page",
+            "pdf_document_selection_from_pages_characters",
+            "pdf_page_selection_for_word_at_point",
+            "pdf_page_selection_for_line_at_point",
+            "pdf_annotation_set_action_url",
+            "pdf_outline_set_destination",
+            "pdf_selection_add_selection",
+        ],
+    );
+}
+
+#[test]
+fn view_and_thumbnail_surface_is_present() {
+    let view_header = read_header("PDFView");
+    assert_contains_all(
+        &view_header,
+        &[
+            "@property (nonatomic, retain, nullable) PDFDocument *document;",
+            "@property (nonatomic) PDFDisplayMode displayMode;",
+            "@property (nonatomic) PDFDisplayDirection displayDirection",
+            "@property (nonatomic, readonly) NSArray<PDFPage *> *visiblePages",
+            "@property (nonatomic, getter=isInMarkupMode) BOOL inMarkupMode",
+        ],
+    );
+
+    let thumbnail_header = read_header("PDFThumbnailView");
+    assert_contains_all(
+        &thumbnail_header,
+        &[
+            "@property (nonatomic, weak, nullable) PDFView *PDFView;",
+            "@property (nonatomic) PDFSize thumbnailSize;",
+            "@property (nonatomic) NSUInteger maximumNumberOfColumns;",
+            "@property (nonatomic) BOOL allowsMultipleSelection;",
+        ],
+    );
+
+    let bridge = read_bridge();
+    assert_contains_all(
+        &bridge,
+        &[
+            "pdf_view_new",
+            "pdf_view_set_document",
+            "pdf_view_visible_page_at",
+            "pdf_thumbnail_view_new",
+            "pdf_thumbnail_view_set_pdf_view",
+            "pdf_thumbnail_view_selected_page_at",
+        ],
+    );
+}
+
+#[test]
+fn action_border_destination_and_appearance_surface_is_present() {
+    let action_url_header = read_header("PDFActionURL");
+    let action_goto_header = read_header("PDFActionGoTo");
+    let border_header = read_header("PDFBorder");
+    let destination_header = read_header("PDFDestination");
+    let appearance_header = read_header("PDFAppearanceCharacteristics");
+
+    assert_contains_all(&action_url_header, &["- (instancetype)initWithURL:(NSURL *)url", "@property (nonatomic, copy, nullable) NSURL *URL;"]);
+    assert_contains_all(&action_goto_header, &["- (instancetype)initWithDestination:(PDFDestination *)destination", "@property (nonatomic, strong) PDFDestination *destination;"]);
+    assert_contains_all(&border_header, &["@property (nonatomic) PDFBorderStyle style;", "@property (nonatomic, copy, nullable) NSArray *dashPattern;"]);
+    assert_contains_all(&destination_header, &["- (instancetype)initWithPage:(PDFPage *)page atPoint:(PDFPoint)point", "- (NSComparisonResult)compare:(PDFDestination *)destination"]);
+    assert_contains_all(&appearance_header, &["@property (nonatomic) PDFWidgetControlType controlType;", "@property (nonatomic, copy, nullable) NSString *caption;"]);
+
+    let bridge = read_bridge();
+    assert_contains_all(
+        &bridge,
+        &[
+            "pdf_action_url_new",
+            "pdf_action_goto_new",
+            "pdf_border_set_dash_pattern",
+            "pdf_destination_compare",
+            "pdf_appearance_characteristics_set_control_type",
+        ],
+    );
+}
+
+#[test]
+fn accessibility_node_status_surface_is_present() {
+    let bridge = read_bridge();
+    assert_contains_all(
+        &bridge,
+        &[
+            "pdf_accessibility_node_public_api_available",
+            "pdf_accessibility_node_reason",
         ],
     );
 }

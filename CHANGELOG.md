@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.2.0] - 2026-05-16
+
+### Added
+
+- Split the Swift bridge into per-area files covering `PDFDocument`, `PDFPage`, `PDFAnnotation`, `PDFOutline`, `PDFSelection`, `PDFView`, `PDFThumbnailView`, `PDFActionURL`, `PDFActionGoTo`, `PDFBorder`, `PDFDestination`, `PDFAppearanceCharacteristics`, and `PDFAccessibilityNode` status reporting.
+- Expanded the safe Rust API with document/page mutation, selection composition, outline editing, annotation action/border helpers, destination comparison, and headless-safe `PdfView` / `PdfThumbnailView` wrappers.
+- Added one example and one integration test per logical area, plus an updated header-audit test and `COVERAGE.md`.
+
+### Changed
+
+- Fixed the README doctest to use `std::result::Result` and refreshed the documentation to reflect the v0.2.0 surface.
+
 ## [0.1.0] - 2026-05-16
 
 ### Added

@@ -1,11 +1,11 @@
 [package]
 name = "pdfkit-rs"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 license = "MIT OR Apache-2.0"
 homepage = "https://github.com/doom-fish/pdfkit-rs"
 repository = "https://github.com/doom-fish/pdfkit-rs"
-description = "Safe Rust bindings for Apple's PDFKit framework — PDF documents, pages, selections, outlines, and annotations on macOS"
+description = "Safe Rust bindings for Apple's PDFKit framework — documents, pages, selections, outlines, annotations, destinations, actions, and view state on macOS"
 authors = ["Per Johansson <per@doom.fish>"]
 keywords = ["pdf", "pdfkit", "macos", "apple", "document"]
 categories = ["api-bindings", "graphics", "os::macos-apis"]
@@ -23,6 +23,7 @@ include = [
     "README.md",
     "LICENSE-*",
     "CHANGELOG.md",
+    "COVERAGE.md",
 ]
 
 [lints.rust]
