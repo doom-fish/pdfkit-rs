@@ -4,45 +4,46 @@ use crate::action::{sealed, PdfActionLike};
 use crate::error::Result;
 use crate::ffi;
 use crate::handle::ObjectHandle;
-use crate::util::{c_string, take_string};
+use crate::types::PdfActionNamedName;
+use crate::util::take_string;
 
 #[derive(Debug, Clone)]
-pub struct PdfActionUrl {
+pub struct PdfActionNamed {
     handle: ObjectHandle,
 }
 
-impl PdfActionUrl {
+impl PdfActionNamed {
     pub(crate) fn from_handle(handle: ObjectHandle) -> Self {
         Self { handle }
     }
 
-    pub fn new(url: &str) -> Result<Self> {
-        let url = c_string(url)?;
+    pub fn new(name: PdfActionNamedName) -> Result<Self> {
         let mut out_action = ptr::null_mut();
         let mut out_error = ptr::null_mut();
-        let status = unsafe { ffi::pdf_action_url_new(url.as_ptr(), &mut out_action, &mut out_error) };
+        let status = unsafe { ffi::pdf_action_named_new(name.as_raw(), &mut out_action, &mut out_error) };
         crate::util::status_result(status, out_error)?;
         Ok(Self::from_handle(crate::util::required_handle(
             out_action,
-            "PDFActionURL",
+            "PDFActionNamed",
         )?))
     }
 
     #[must_use]
-    pub fn url(&self) -> Option<String> {
-        take_string(unsafe { ffi::pdf_action_url_string(self.handle.as_ptr()) })
+    pub fn name(&self) -> Option<PdfActionNamedName> {
+        PdfActionNamedName::from_raw(unsafe { ffi::pdf_action_named_name_raw(self.handle.as_ptr()) })
     }
 
-    pub fn set_url(&self, url: &str) -> Result<()> {
-        let url = c_string(url)?;
+    pub fn set_name(&self, name: PdfActionNamedName) -> Result<()> {
         let mut out_error = ptr::null_mut();
-        let status = unsafe { ffi::pdf_action_url_set_url(self.handle.as_ptr(), url.as_ptr(), &mut out_error) };
+        let status = unsafe {
+            ffi::pdf_action_named_set_name(self.handle.as_ptr(), name.as_raw(), &mut out_error)
+        };
         crate::util::status_result(status, out_error)
     }
 
     #[must_use]
     pub fn action_type(&self) -> Option<String> {
-        take_string(unsafe { ffi::pdf_action_url_type_string(self.handle.as_ptr()) })
+        take_string(unsafe { ffi::pdf_action_named_type_string(self.handle.as_ptr()) })
     }
 
     pub(crate) fn as_handle_ptr(&self) -> *mut core::ffi::c_void {
@@ -50,9 +51,9 @@ impl PdfActionUrl {
     }
 }
 
-impl sealed::Sealed for PdfActionUrl {}
+impl sealed::Sealed for PdfActionNamed {}
 
-impl PdfActionLike for PdfActionUrl {
+impl PdfActionLike for PdfActionNamed {
     fn as_action_handle_ptr(&self) -> *mut core::ffi::c_void {
         self.as_handle_ptr()
     }

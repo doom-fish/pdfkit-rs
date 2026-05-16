@@ -39,6 +39,10 @@ fn read_bridge() -> String {
         .join("\n")
 }
 
+fn read_src(path: &str) -> String {
+    read(&PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("src").join(path))
+}
+
 fn assert_contains_all(haystack: &str, needles: &[&str]) {
     for needle in needles {
         assert!(haystack.contains(needle), "missing `{needle}`");
@@ -55,6 +59,7 @@ fn document_page_selection_outline_annotation_surface_is_present() {
             "- (void)insertPage:(PDFPage *)page atIndex:(NSUInteger)index;",
             "- (nullable PDFSelection *)selectionFromPage:(PDFPage *)startPage atPoint:(PDFPoint)startPoint toPage:(PDFPage *)endPage atPoint:(PDFPoint)endPoint;",
             "@property (nonatomic, strong, nullable) PDFOutline *outlineRoot",
+            "@property (nonatomic, weak, nullable) id<PDFDocumentDelegate> delegate;",
         ],
     );
 
@@ -111,9 +116,11 @@ fn document_page_selection_outline_annotation_surface_is_present() {
             "pdf_document_new",
             "pdf_document_insert_page",
             "pdf_document_selection_from_pages_characters",
+            "pdf_document_set_delegate",
             "pdf_page_selection_for_word_at_point",
             "pdf_page_selection_for_line_at_point",
-            "pdf_annotation_set_action_url",
+            "pdf_annotation_action",
+            "pdf_outline_set_action",
             "pdf_outline_set_destination",
             "pdf_selection_add_selection",
         ],
@@ -182,6 +189,108 @@ fn action_border_destination_and_appearance_surface_is_present() {
             "pdf_border_set_dash_pattern",
             "pdf_destination_compare",
             "pdf_appearance_characteristics_set_control_type",
+        ],
+    );
+}
+
+#[test]
+fn advanced_action_delegate_notification_and_option_surface_is_present() {
+    let action_header = read_header("PDFAction");
+    let action_named_header = read_header("PDFActionNamed");
+    let action_remote_goto_header = read_header("PDFActionRemoteGoTo");
+    let document_header = read_header("PDFDocument");
+    let annotation_utilities_header = read_header("PDFAnnotationUtilities");
+    let view_header = read_header("PDFView");
+    let thumbnail_header = read_header("PDFThumbnailView");
+
+    assert_contains_all(&action_header, &["@property (nonatomic, readonly) NSString *type;"]);
+    assert_contains_all(
+        &action_named_header,
+        &[
+            "typedef NS_ENUM(NSInteger, PDFActionNamedName)",
+            "- (instancetype)initWithName:(PDFActionNamedName)name NS_DESIGNATED_INITIALIZER;",
+            "@property (nonatomic) PDFActionNamedName name;",
+        ],
+    );
+    assert_contains_all(
+        &action_remote_goto_header,
+        &[
+            "- (instancetype)initWithPageIndex:(NSUInteger)pageIndex atPoint:(PDFPoint)point fileURL:(NSURL *)url NS_DESIGNATED_INITIALIZER;",
+            "@property (nonatomic) NSUInteger pageIndex;",
+            "@property (nonatomic) PDFPoint point;",
+            "@property (nonatomic, copy) NSURL *URL;",
+        ],
+    );
+    assert_contains_all(
+        &document_header,
+        &[
+            "PDFKIT_EXTERN NSNotificationName const PDFDocumentDidUnlockNotification",
+            "PDFKIT_EXTERN NSString* const PDFDocumentFoundSelectionKey",
+            "PDFKIT_EXTERN PDFDocumentWriteOption const PDFDocumentOwnerPasswordOption",
+            "@protocol PDFDocumentDelegate< NSObject >",
+        ],
+    );
+    assert_contains_all(
+        &annotation_utilities_header,
+        &[
+            "typedef NS_ENUM(NSInteger, PDFLineStyle)",
+            "typedef NS_ENUM(NSInteger, PDFMarkupType)",
+        ],
+    );
+    assert_contains_all(
+        &view_header,
+        &[
+            "PDFKIT_EXTERN NSNotificationName const PDFViewDocumentChangedNotification",
+            "PDFKIT_EXTERN NSNotificationName const PDFViewVisiblePagesChangedNotification",
+        ],
+    );
+    assert_contains_all(
+        &thumbnail_header,
+        &["PDFKIT_EXTERN NSString* const PDFThumbnailViewDocumentEditedNotification"],
+    );
+
+    let bridge = read_bridge();
+    assert_contains_all(
+        &bridge,
+        &[
+            "pdf_action_type_string",
+            "pdf_action_named_new",
+            "pdf_action_remote_goto_new",
+            "pdf_document_delegate_new",
+            "pdf_document_write_to_url_with_options",
+        ],
+    );
+
+    let notifications_src = read_src("notifications.rs");
+    assert_contains_all(
+        &notifications_src,
+        &[
+            "pub enum PdfDocumentNotification",
+            "pub enum PdfDocumentNotificationUserInfoKey",
+            "pub enum PdfViewNotification",
+            "pub enum PdfThumbnailViewNotification",
+        ],
+    );
+
+    let delegate_src = read_src("document_delegate.rs");
+    assert_contains_all(
+        &delegate_src,
+        &[
+            "pub trait PdfDocumentDelegate",
+            "pub struct PdfDocumentDelegateHandle",
+            "fn page_class_name(&mut self) -> Option<String>",
+            "fn annotation_class_name(&mut self, _annotation_type: &str) -> Option<String>",
+        ],
+    );
+
+    let types_src = read_src("types.rs");
+    assert_contains_all(
+        &types_src,
+        &[
+            "pub enum PdfActionNamedName",
+            "pub enum PdfLineStyle",
+            "pub enum PdfMarkupType",
+            "pub struct PdfDocumentWriteOptions",
         ],
     );
 }

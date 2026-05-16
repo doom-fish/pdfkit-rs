@@ -120,6 +120,28 @@ public func pdf_outline_set_destination(
     }
 }
 
+@_cdecl("pdf_outline_action")
+public func pdf_outline_action(_ handle: UnsafeMutableRawPointer?) -> UnsafeMutableRawPointer? {
+    guard let outline = pdf_outline_value(handle), let action = outline.action else {
+        return nil
+    }
+    return pdf_retain_action(action)
+}
+
+@_cdecl("pdf_outline_set_action")
+public func pdf_outline_set_action(
+    _ handle: UnsafeMutableRawPointer?,
+    _ actionHandle: UnsafeMutableRawPointer?,
+    _ outError: UnsafeMutablePointer<UnsafeMutablePointer<CChar>?>?
+) -> Int32 {
+    pdf_run(outError) {
+        guard let outline = pdf_outline_value(handle) else {
+            throw PDFBridgeError.invalidArgument("missing outline handle")
+        }
+        outline.action = pdf_any_action_value(actionHandle)
+    }
+}
+
 @_cdecl("pdf_outline_action_url")
 public func pdf_outline_action_url(_ handle: UnsafeMutableRawPointer?) -> UnsafeMutableRawPointer? {
     guard let outline = pdf_outline_value(handle), let action = outline.action as? PDFActionURL else {

@@ -1,13 +1,14 @@
 use std::path::Path;
 use std::ptr;
 
-use crate::error::Result;
+use crate::document_delegate::PdfDocumentDelegateHandle;
+use crate::error::{PdfKitError, Result};
 use crate::ffi;
 use crate::handle::ObjectHandle;
 use crate::outline::PdfOutline;
 use crate::page::PdfPage;
 use crate::selection::PdfSelection;
-use crate::types::{PdfDocumentAttributes, PdfDocumentInfo, PdfPoint};
+use crate::types::{PdfDocumentAttributes, PdfDocumentInfo, PdfDocumentWriteOptions, PdfPoint};
 use crate::util::{c_string, parse_json, path_to_c_string, required_handle, take_string};
 
 #[derive(Debug, Clone)]
@@ -188,11 +189,48 @@ impl PdfDocument {
         Ok(unsafe { ffi::pdf_document_unlock(self.handle.as_ptr(), password.as_ptr()) != 0 })
     }
 
+    pub fn set_delegate(&self, delegate: Option<&PdfDocumentDelegateHandle>) -> Result<()> {
+        let mut out_error = ptr::null_mut();
+        let status = unsafe {
+            ffi::pdf_document_set_delegate(
+                self.handle.as_ptr(),
+                delegate.map_or(ptr::null_mut(), PdfDocumentDelegateHandle::as_handle_ptr),
+                &mut out_error,
+            )
+        };
+        crate::util::status_result(status, out_error)
+    }
+
     pub fn write_to_url(&self, path: impl AsRef<Path>) -> Result<()> {
         let path = path_to_c_string(path.as_ref())?;
         let mut out_error = ptr::null_mut();
         let status = unsafe {
             ffi::pdf_document_write_to_url(self.handle.as_ptr(), path.as_ptr(), &mut out_error)
+        };
+        crate::util::status_result(status, out_error)
+    }
+
+    pub fn write_to_url_with_options(
+        &self,
+        path: impl AsRef<Path>,
+        options: &PdfDocumentWriteOptions,
+    ) -> Result<()> {
+        let path = path_to_c_string(path.as_ref())?;
+        let options_json = serde_json::to_string(options).map_err(|error| {
+            PdfKitError::new(
+                ffi::status::FRAMEWORK,
+                format!("failed to encode PDFDocument write options: {error}"),
+            )
+        })?;
+        let options_json = c_string(&options_json)?;
+        let mut out_error = ptr::null_mut();
+        let status = unsafe {
+            ffi::pdf_document_write_to_url_with_options(
+                self.handle.as_ptr(),
+                path.as_ptr(),
+                options_json.as_ptr(),
+                &mut out_error,
+            )
         };
         crate::util::status_result(status, out_error)
     }

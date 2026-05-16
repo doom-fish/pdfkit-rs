@@ -21,16 +21,21 @@
 )]
 
 mod accessibility_node;
+mod action;
 mod action_goto;
+mod action_named;
+mod action_remote_goto;
 mod action_url;
 mod annotation;
 mod appearance_characteristics;
 mod border;
 mod destination;
 mod document;
+mod document_delegate;
 mod error;
 mod ffi;
 mod handle;
+mod notifications;
 mod outline;
 mod page;
 mod selection;
@@ -40,36 +45,49 @@ mod util;
 mod view;
 
 pub use accessibility_node::PdfAccessibilityNode;
+pub use action::{PdfAction, PdfActionLike};
 pub use action_goto::PdfActionGoTo;
+pub use action_named::PdfActionNamed;
+pub use action_remote_goto::PdfActionRemoteGoTo;
 pub use action_url::PdfActionUrl;
 pub use annotation::PdfAnnotation;
 pub use appearance_characteristics::PdfAppearanceCharacteristics;
 pub use border::PdfBorder;
 pub use destination::PdfDestination;
 pub use document::PdfDocument;
+pub use document_delegate::{PdfDocumentDelegate, PdfDocumentDelegateHandle};
 pub use error::{PdfKitError, Result};
+pub use notifications::{
+    PdfDocumentNotification, PdfDocumentNotificationUserInfoKey, PdfThumbnailViewNotification,
+    PdfViewNotification,
+};
 pub use outline::PdfOutline;
 pub use page::PdfPage;
 pub use selection::PdfSelection;
 pub use thumbnail_view::PdfThumbnailView;
 pub use types::{
-    DisplayBox, PdfAnnotationInfo, PdfAppearanceCharacteristicsInfo, PdfBorderInfo,
-    PdfBorderStyle, PdfColor, PdfDestinationInfo, PdfDisplayDirection, PdfDisplayMode,
-    PdfDocumentAttributes, PdfDocumentInfo, PdfDocumentPermissions, PdfEdgeInsets,
-    PdfInterpolationQuality, PdfPoint, PdfRect, PdfSize, PdfTextRange, PdfThumbnailViewInfo,
+    DisplayBox, PdfActionNamedName, PdfAnnotationInfo, PdfAppearanceCharacteristicsInfo,
+    PdfBorderInfo, PdfBorderStyle, PdfColor, PdfDestinationInfo, PdfDisplayDirection,
+    PdfDisplayMode, PdfDocumentAttributes, PdfDocumentInfo, PdfDocumentPermissions,
+    PdfDocumentWriteOptions, PdfEdgeInsets, PdfInterpolationQuality, PdfLineStyle,
+    PdfMarkupType, PdfPoint, PdfRect, PdfSize, PdfTextRange, PdfThumbnailViewInfo,
     PdfViewInfo, PdfWidgetControlType,
 };
 pub use view::PdfView;
 
 pub mod prelude {
     pub use crate::{
-        DisplayBox, PdfAccessibilityNode, PdfActionGoTo, PdfActionUrl, PdfAnnotation,
+        DisplayBox, PdfAccessibilityNode, PdfAction, PdfActionGoTo, PdfActionNamed,
+        PdfActionNamedName, PdfActionRemoteGoTo, PdfActionUrl, PdfAnnotation,
         PdfAnnotationInfo, PdfAppearanceCharacteristics, PdfAppearanceCharacteristicsInfo,
         PdfBorder, PdfBorderInfo, PdfBorderStyle, PdfColor, PdfDestination,
         PdfDestinationInfo, PdfDisplayDirection, PdfDisplayMode, PdfDocument,
-        PdfDocumentAttributes, PdfDocumentInfo, PdfDocumentPermissions, PdfEdgeInsets,
-        PdfInterpolationQuality, PdfKitError, PdfOutline, PdfPage, PdfPoint, PdfRect,
-        PdfSelection, PdfSize, PdfTextRange, PdfThumbnailView, PdfThumbnailViewInfo,
-        PdfView, PdfViewInfo, PdfWidgetControlType, Result,
+        PdfDocumentAttributes, PdfDocumentDelegate, PdfDocumentDelegateHandle,
+        PdfDocumentInfo, PdfDocumentNotification, PdfDocumentNotificationUserInfoKey,
+        PdfDocumentPermissions, PdfDocumentWriteOptions, PdfEdgeInsets,
+        PdfInterpolationQuality, PdfKitError, PdfLineStyle, PdfMarkupType, PdfOutline,
+        PdfPage, PdfPoint, PdfRect, PdfSelection, PdfSize, PdfTextRange,
+        PdfThumbnailView, PdfThumbnailViewInfo, PdfThumbnailViewNotification, PdfView,
+        PdfViewInfo, PdfViewNotification, PdfWidgetControlType, Result,
     };
 }

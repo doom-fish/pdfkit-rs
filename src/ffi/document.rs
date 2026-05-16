@@ -52,9 +52,20 @@ unsafe extern "C" {
         end_character: u64,
     ) -> *mut c_void;
     pub fn pdf_document_unlock(handle: *mut c_void, password: *const c_char) -> i32;
+    pub fn pdf_document_set_delegate(
+        handle: *mut c_void,
+        delegate_handle: *mut c_void,
+        out_error_message: *mut *mut c_char,
+    ) -> i32;
     pub fn pdf_document_write_to_url(
         handle: *mut c_void,
         path: *const c_char,
+        out_error_message: *mut *mut c_char,
+    ) -> i32;
+    pub fn pdf_document_write_to_url_with_options(
+        handle: *mut c_void,
+        path: *const c_char,
+        options_json: *const c_char,
         out_error_message: *mut *mut c_char,
     ) -> i32;
     pub fn pdf_document_insert_page(

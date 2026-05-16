@@ -1,5 +1,6 @@
 use std::ptr;
 
+use crate::action::{PdfAction, PdfActionLike};
 use crate::action_goto::PdfActionGoTo;
 use crate::action_url::PdfActionUrl;
 use crate::border::PdfBorder;
@@ -84,21 +85,35 @@ impl PdfAnnotation {
     }
 
     #[must_use]
+    pub fn action(&self) -> Option<PdfAction> {
+        let ptr = unsafe { ffi::pdf_annotation_action(self.handle.as_ptr()) };
+        unsafe { ObjectHandle::from_retained_ptr(ptr) }.map(PdfAction::from_handle)
+    }
+
+    pub fn set_action<A: PdfActionLike>(&self, action: Option<&A>) -> Result<()> {
+        let mut out_error = ptr::null_mut();
+        let status = unsafe {
+            ffi::pdf_annotation_set_action(
+                self.handle.as_ptr(),
+                action.map_or(ptr::null_mut(), PdfActionLike::as_action_handle_ptr),
+                &mut out_error,
+            )
+        };
+        crate::util::status_result(status, out_error)
+    }
+
+    pub fn clear_action(&self) -> Result<()> {
+        self.set_action::<PdfAction>(None)
+    }
+
+    #[must_use]
     pub fn action_url(&self) -> Option<PdfActionUrl> {
         let ptr = unsafe { ffi::pdf_annotation_action_url(self.handle.as_ptr()) };
         unsafe { ObjectHandle::from_retained_ptr(ptr) }.map(PdfActionUrl::from_handle)
     }
 
     pub fn set_action_url(&self, action: Option<&PdfActionUrl>) -> Result<()> {
-        let mut out_error = ptr::null_mut();
-        let status = unsafe {
-            ffi::pdf_annotation_set_action_url(
-                self.handle.as_ptr(),
-                action.map_or(ptr::null_mut(), PdfActionUrl::as_handle_ptr),
-                &mut out_error,
-            )
-        };
-        crate::util::status_result(status, out_error)
+        self.set_action(action)
     }
 
     #[must_use]
@@ -108,15 +123,7 @@ impl PdfAnnotation {
     }
 
     pub fn set_action_goto(&self, action: Option<&PdfActionGoTo>) -> Result<()> {
-        let mut out_error = ptr::null_mut();
-        let status = unsafe {
-            ffi::pdf_annotation_set_action_goto(
-                self.handle.as_ptr(),
-                action.map_or(ptr::null_mut(), PdfActionGoTo::as_handle_ptr),
-                &mut out_error,
-            )
-        };
-        crate::util::status_result(status, out_error)
+        self.set_action(action)
     }
 
     pub(crate) fn as_handle_ptr(&self) -> *mut core::ffi::c_void {

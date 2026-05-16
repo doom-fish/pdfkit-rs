@@ -36,6 +36,62 @@ private func pdf_document_attributes(_ document: PDFDocument) -> [String: Any] {
     ]
 }
 
+private func pdf_document_write_options(_ json: String?) throws -> [PDFDocumentWriteOption: Any] {
+    guard let json, !json.isEmpty else { return [:] }
+    guard let data = json.data(using: .utf8) else {
+        throw PDFBridgeError.invalidArgument("invalid write options JSON")
+    }
+    guard let payload = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+        throw PDFBridgeError.invalidArgument("invalid write options JSON")
+    }
+
+    var options: [PDFDocumentWriteOption: Any] = [:]
+
+    if let ownerPassword = payload["owner_password"] as? String {
+        options[PDFDocumentWriteOption.ownerPasswordOption] = ownerPassword
+    }
+    if let userPassword = payload["user_password"] as? String {
+        options[PDFDocumentWriteOption.userPasswordOption] = userPassword
+    }
+    if let accessPermissions = payload["access_permissions"] as? NSNumber {
+        if #available(macOS 12.0, *) {
+            options[PDFDocumentWriteOption.accessPermissionsOption] = NSNumber(value: accessPermissions.uint64Value)
+        } else {
+            throw PDFBridgeError.framework("PDFDocumentAccessPermissionsOption requires macOS 12.0")
+        }
+    }
+    if let burnInAnnotations = payload["burn_in_annotations"] as? Bool, burnInAnnotations {
+        if #available(macOS 13.0, *) {
+            options[PDFDocumentWriteOption.burnInAnnotationsOption] = NSNumber(value: true)
+        } else {
+            throw PDFBridgeError.framework("PDFDocumentBurnInAnnotationsOption requires macOS 13.0")
+        }
+    }
+    if let saveTextFromOCR = payload["save_text_from_ocr"] as? Bool, saveTextFromOCR {
+        if #available(macOS 13.0, *) {
+            options[PDFDocumentWriteOption.saveTextFromOCROption] = NSNumber(value: true)
+        } else {
+            throw PDFBridgeError.framework("PDFDocumentSaveTextFromOCROption requires macOS 13.0")
+        }
+    }
+    if let saveImagesAsJPEG = payload["save_images_as_jpeg"] as? Bool, saveImagesAsJPEG {
+        if #available(macOS 13.4, *) {
+            options[PDFDocumentWriteOption.saveImagesAsJPEGOption] = NSNumber(value: true)
+        } else {
+            throw PDFBridgeError.framework("PDFDocumentSaveImagesAsJPEGOption requires macOS 13.4")
+        }
+    }
+    if let optimizeImagesForScreen = payload["optimize_images_for_screen"] as? Bool, optimizeImagesForScreen {
+        if #available(macOS 13.4, *) {
+            options[PDFDocumentWriteOption.optimizeImagesForScreenOption] = NSNumber(value: true)
+        } else {
+            throw PDFBridgeError.framework("PDFDocumentOptimizeImagesForScreenOption requires macOS 13.4")
+        }
+    }
+
+    return options
+}
+
 @_cdecl("pdf_document_new")
 public func pdf_document_new(
     _ outDocument: UnsafeMutablePointer<UnsafeMutableRawPointer?>?,
@@ -243,6 +299,20 @@ public func pdf_document_unlock(
     return document.unlock(withPassword: String(cString: password)) ? 1 : 0
 }
 
+@_cdecl("pdf_document_set_delegate")
+public func pdf_document_set_delegate(
+    _ handle: UnsafeMutableRawPointer?,
+    _ delegateHandle: UnsafeMutableRawPointer?,
+    _ outError: UnsafeMutablePointer<UnsafeMutablePointer<CChar>?>?
+) -> Int32 {
+    pdf_run(outError) {
+        guard let document = pdf_document_value(handle) else {
+            throw PDFBridgeError.invalidArgument("missing document handle")
+        }
+        document.delegate = pdf_document_delegate_value(delegateHandle)
+    }
+}
+
 @_cdecl("pdf_document_write_to_url")
 public func pdf_document_write_to_url(
     _ handle: UnsafeMutableRawPointer?,
@@ -256,6 +326,25 @@ public func pdf_document_write_to_url(
         let url = URL(fileURLWithPath: String(cString: path))
         guard document.write(to: url) else {
             throw PDFBridgeError.nullResult("PDFDocument.write(to:) returned false")
+        }
+    }
+}
+
+@_cdecl("pdf_document_write_to_url_with_options")
+public func pdf_document_write_to_url_with_options(
+    _ handle: UnsafeMutableRawPointer?,
+    _ path: UnsafePointer<CChar>?,
+    _ optionsJSON: UnsafePointer<CChar>?,
+    _ outError: UnsafeMutablePointer<UnsafeMutablePointer<CChar>?>?
+) -> Int32 {
+    pdf_run(outError) {
+        guard let document = pdf_document_value(handle), let path else {
+            throw PDFBridgeError.invalidArgument("missing document handle or output path")
+        }
+        let options = try pdf_document_write_options(pdf_optional_string(optionsJSON))
+        let url = URL(fileURLWithPath: String(cString: path))
+        guard document.write(to: url, withOptions: options.isEmpty ? nil : options) else {
+            throw PDFBridgeError.nullResult("PDFDocument.write(to:withOptions:) returned false")
         }
     }
 }

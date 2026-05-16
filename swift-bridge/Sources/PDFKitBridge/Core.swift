@@ -15,13 +15,23 @@ final class PDFOutlineBox { let value: PDFOutline; init(_ value: PDFOutline) { s
 final class PDFSelectionBox { let value: PDFSelection; init(_ value: PDFSelection) { self.value = value } }
 final class PDFViewBox { let value: PDFView; init(_ value: PDFView) { self.value = value } }
 final class PDFThumbnailViewBox { let value: PDFThumbnailView; init(_ value: PDFThumbnailView) { self.value = value } }
+final class PDFActionBox { let value: PDFAction; init(_ value: PDFAction) { self.value = value } }
 final class PDFActionURLBox { let value: PDFActionURL; init(_ value: PDFActionURL) { self.value = value } }
 final class PDFActionGoToBox { let value: PDFActionGoTo; init(_ value: PDFActionGoTo) { self.value = value } }
+final class PDFActionNamedBox { let value: PDFActionNamed; init(_ value: PDFActionNamed) { self.value = value } }
+final class PDFActionRemoteGoToBox {
+    let value: PDFActionRemoteGoTo
+    init(_ value: PDFActionRemoteGoTo) { self.value = value }
+}
 final class PDFBorderBox { let value: PDFBorder; init(_ value: PDFBorder) { self.value = value } }
 final class PDFDestinationBox { let value: PDFDestination; init(_ value: PDFDestination) { self.value = value } }
 final class PDFAppearanceCharacteristicsBox {
     let value: PDFAppearanceCharacteristics
     init(_ value: PDFAppearanceCharacteristics) { self.value = value }
+}
+final class PDFRustDocumentDelegateBox {
+    let value: PDFRustDocumentDelegate
+    init(_ value: PDFRustDocumentDelegate) { self.value = value }
 }
 
 @inline(__always)
@@ -46,9 +56,19 @@ func pdf_retain_thumbnail_view(_ value: PDFThumbnailView) -> UnsafeMutableRawPoi
     pdf_retain_any(PDFThumbnailViewBox(value))
 }
 @inline(__always)
+func pdf_retain_action(_ value: PDFAction) -> UnsafeMutableRawPointer { pdf_retain_any(PDFActionBox(value)) }
+@inline(__always)
 func pdf_retain_action_url(_ value: PDFActionURL) -> UnsafeMutableRawPointer { pdf_retain_any(PDFActionURLBox(value)) }
 @inline(__always)
 func pdf_retain_action_goto(_ value: PDFActionGoTo) -> UnsafeMutableRawPointer { pdf_retain_any(PDFActionGoToBox(value)) }
+@inline(__always)
+func pdf_retain_action_named(_ value: PDFActionNamed) -> UnsafeMutableRawPointer {
+    pdf_retain_any(PDFActionNamedBox(value))
+}
+@inline(__always)
+func pdf_retain_action_remote_goto(_ value: PDFActionRemoteGoTo) -> UnsafeMutableRawPointer {
+    pdf_retain_any(PDFActionRemoteGoToBox(value))
+}
 @inline(__always)
 func pdf_retain_border(_ value: PDFBorder) -> UnsafeMutableRawPointer { pdf_retain_any(PDFBorderBox(value)) }
 @inline(__always)
@@ -56,6 +76,10 @@ func pdf_retain_destination(_ value: PDFDestination) -> UnsafeMutableRawPointer 
 @inline(__always)
 func pdf_retain_appearance_characteristics(_ value: PDFAppearanceCharacteristics) -> UnsafeMutableRawPointer {
     pdf_retain_any(PDFAppearanceCharacteristicsBox(value))
+}
+@inline(__always)
+func pdf_retain_document_delegate(_ value: PDFRustDocumentDelegate) -> UnsafeMutableRawPointer {
+    pdf_retain_any(PDFRustDocumentDelegateBox(value))
 }
 
 @inline(__always)
@@ -108,6 +132,13 @@ func pdf_thumbnail_view_box(_ handle: UnsafeMutableRawPointer?) -> PDFThumbnailV
 }
 
 @inline(__always)
+func pdf_action_box(_ handle: UnsafeMutableRawPointer?) -> PDFActionBox? {
+    guard let handle else { return nil }
+    let typed = handle.assumingMemoryBound(to: PDFActionBox.self)
+    return Unmanaged<PDFActionBox>.fromOpaque(UnsafeRawPointer(typed)).takeUnretainedValue()
+}
+
+@inline(__always)
 func pdf_action_url_box(_ handle: UnsafeMutableRawPointer?) -> PDFActionURLBox? {
     guard let handle else { return nil }
     let typed = handle.assumingMemoryBound(to: PDFActionURLBox.self)
@@ -119,6 +150,20 @@ func pdf_action_goto_box(_ handle: UnsafeMutableRawPointer?) -> PDFActionGoToBox
     guard let handle else { return nil }
     let typed = handle.assumingMemoryBound(to: PDFActionGoToBox.self)
     return Unmanaged<PDFActionGoToBox>.fromOpaque(UnsafeRawPointer(typed)).takeUnretainedValue()
+}
+
+@inline(__always)
+func pdf_action_named_box(_ handle: UnsafeMutableRawPointer?) -> PDFActionNamedBox? {
+    guard let handle else { return nil }
+    let typed = handle.assumingMemoryBound(to: PDFActionNamedBox.self)
+    return Unmanaged<PDFActionNamedBox>.fromOpaque(UnsafeRawPointer(typed)).takeUnretainedValue()
+}
+
+@inline(__always)
+func pdf_action_remote_goto_box(_ handle: UnsafeMutableRawPointer?) -> PDFActionRemoteGoToBox? {
+    guard let handle else { return nil }
+    let typed = handle.assumingMemoryBound(to: PDFActionRemoteGoToBox.self)
+    return Unmanaged<PDFActionRemoteGoToBox>.fromOpaque(UnsafeRawPointer(typed)).takeUnretainedValue()
 }
 
 @inline(__always)
@@ -143,6 +188,13 @@ func pdf_appearance_characteristics_box(_ handle: UnsafeMutableRawPointer?) -> P
 }
 
 @inline(__always)
+func pdf_document_delegate_box(_ handle: UnsafeMutableRawPointer?) -> PDFRustDocumentDelegateBox? {
+    guard let handle else { return nil }
+    let typed = handle.assumingMemoryBound(to: PDFRustDocumentDelegateBox.self)
+    return Unmanaged<PDFRustDocumentDelegateBox>.fromOpaque(UnsafeRawPointer(typed)).takeUnretainedValue()
+}
+
+@inline(__always)
 func pdf_document_value(_ handle: UnsafeMutableRawPointer?) -> PDFDocument? { pdf_document_box(handle)?.value }
 @inline(__always)
 func pdf_page_value(_ handle: UnsafeMutableRawPointer?) -> PDFPage? { pdf_page_box(handle)?.value }
@@ -157,9 +209,25 @@ func pdf_view_value(_ handle: UnsafeMutableRawPointer?) -> PDFView? { pdf_view_b
 @inline(__always)
 func pdf_thumbnail_view_value(_ handle: UnsafeMutableRawPointer?) -> PDFThumbnailView? { pdf_thumbnail_view_box(handle)?.value }
 @inline(__always)
+func pdf_action_value(_ handle: UnsafeMutableRawPointer?) -> PDFAction? { pdf_action_box(handle)?.value }
+@inline(__always)
 func pdf_action_url_value(_ handle: UnsafeMutableRawPointer?) -> PDFActionURL? { pdf_action_url_box(handle)?.value }
 @inline(__always)
 func pdf_action_goto_value(_ handle: UnsafeMutableRawPointer?) -> PDFActionGoTo? { pdf_action_goto_box(handle)?.value }
+@inline(__always)
+func pdf_action_named_value(_ handle: UnsafeMutableRawPointer?) -> PDFActionNamed? { pdf_action_named_box(handle)?.value }
+@inline(__always)
+func pdf_action_remote_goto_value(_ handle: UnsafeMutableRawPointer?) -> PDFActionRemoteGoTo? {
+    pdf_action_remote_goto_box(handle)?.value
+}
+@inline(__always)
+func pdf_any_action_value(_ handle: UnsafeMutableRawPointer?) -> PDFAction? {
+    pdf_action_value(handle)
+        ?? pdf_action_url_value(handle)
+        ?? pdf_action_goto_value(handle)
+        ?? pdf_action_named_value(handle)
+        ?? pdf_action_remote_goto_value(handle)
+}
 @inline(__always)
 func pdf_border_value(_ handle: UnsafeMutableRawPointer?) -> PDFBorder? { pdf_border_box(handle)?.value }
 @inline(__always)
@@ -167,6 +235,10 @@ func pdf_destination_value(_ handle: UnsafeMutableRawPointer?) -> PDFDestination
 @inline(__always)
 func pdf_appearance_characteristics_value(_ handle: UnsafeMutableRawPointer?) -> PDFAppearanceCharacteristics? {
     pdf_appearance_characteristics_box(handle)?.value
+}
+@inline(__always)
+func pdf_document_delegate_value(_ handle: UnsafeMutableRawPointer?) -> PDFRustDocumentDelegate? {
+    pdf_document_delegate_box(handle)?.value
 }
 
 @inline(__always)
@@ -234,6 +306,12 @@ func pdf_json_string(from value: Any) -> String? {
 
 func pdf_optional_string(_ value: UnsafePointer<CChar>?) -> String? {
     guard let value else { return nil }
+    return String(cString: value)
+}
+
+func pdf_take_string(_ value: UnsafeMutablePointer<CChar>?) -> String? {
+    guard let value else { return nil }
+    defer { free(value) }
     return String(cString: value)
 }
 
@@ -337,6 +415,13 @@ func pdf_widget_control_type(_ rawValue: Int32) throws -> PDFWidgetControlType {
         throw PDFBridgeError.invalidArgument("invalid PDFWidgetControlType: \(rawValue)")
     }
     return controlType
+}
+
+func pdf_action_named_name(_ rawValue: Int32) throws -> PDFActionNamedName {
+    guard let name = PDFActionNamedName(rawValue: Int(rawValue)) else {
+        throw PDFBridgeError.invalidArgument("invalid PDFActionNamedName: \(rawValue)")
+    }
+    return name
 }
 
 @_cdecl("pdf_object_retain")

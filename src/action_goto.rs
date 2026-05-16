@@ -1,5 +1,6 @@
 use std::ptr;
 
+use crate::action::{sealed, PdfActionLike};
 use crate::destination::PdfDestination;
 use crate::error::Result;
 use crate::ffi;
@@ -54,5 +55,13 @@ impl PdfActionGoTo {
 
     pub(crate) fn as_handle_ptr(&self) -> *mut core::ffi::c_void {
         self.handle.as_ptr()
+    }
+}
+
+impl sealed::Sealed for PdfActionGoTo {}
+
+impl PdfActionLike for PdfActionGoTo {
+    fn as_action_handle_ptr(&self) -> *mut core::ffi::c_void {
+        self.as_handle_ptr()
     }
 }

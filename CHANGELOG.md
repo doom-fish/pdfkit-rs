@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.2.1] - 2026-05-16
+
+### Added
+
+- Added the abstract `PdfAction` wrapper plus `PdfActionNamed`, `PdfActionRemoteGoTo`, and `PdfActionNamedName`, including generic action accessors on `PdfAnnotation` and `PdfOutline`.
+- Added `PdfDocumentDelegate` / `PdfDocumentDelegateHandle`, `PdfDocumentWriteOptions`, and structured notification-name enums for `PDFDocument`, `PDFView`, and `PDFThumbnailView`.
+- Added `PdfLineStyle` and `PdfMarkupType`, plus examples `14_action_named_remote_goto` and `15_document_delegate_write_options` and integration tests covering the new surface.
+
+### Changed
+
+- Expanded `PdfDocument` with `set_delegate` and `write_to_url_with_options`, and refreshed the README and coverage audits for the v0.2.1 surface.
+
 ## [0.2.0] - 2026-05-16
 
 ### Added

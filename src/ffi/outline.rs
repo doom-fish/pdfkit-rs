@@ -28,17 +28,13 @@ unsafe extern "C" {
         destination_handle: *mut c_void,
         out_error_message: *mut *mut c_char,
     ) -> i32;
+    pub fn pdf_outline_action(handle: *mut c_void) -> *mut c_void;
+    pub fn pdf_outline_set_action(
+        handle: *mut c_void,
+        action_handle: *mut c_void,
+        out_error_message: *mut *mut c_char,
+    ) -> i32;
     pub fn pdf_outline_action_url(handle: *mut c_void) -> *mut c_void;
-    pub fn pdf_outline_set_action_url(
-        handle: *mut c_void,
-        action_handle: *mut c_void,
-        out_error_message: *mut *mut c_char,
-    ) -> i32;
     pub fn pdf_outline_action_goto(handle: *mut c_void) -> *mut c_void;
-    pub fn pdf_outline_set_action_goto(
-        handle: *mut c_void,
-        action_handle: *mut c_void,
-        out_error_message: *mut *mut c_char,
-    ) -> i32;
     pub fn pdf_outline_parent(handle: *mut c_void) -> *mut c_void;
 }

@@ -1,4 +1,4 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy, PartialEq, Deserialize)]
 pub struct PdfRect {
@@ -78,6 +78,97 @@ impl PdfBorderStyle {
             2 => Some(Self::Beveled),
             3 => Some(Self::Inset),
             4 => Some(Self::Underline),
+            _ => None,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(i32)]
+pub enum PdfActionNamedName {
+    None = 0,
+    NextPage = 1,
+    PreviousPage = 2,
+    FirstPage = 3,
+    LastPage = 4,
+    GoBack = 5,
+    GoForward = 6,
+    GoToPage = 7,
+    Find = 8,
+    Print = 9,
+    ZoomIn = 10,
+    ZoomOut = 11,
+}
+
+impl PdfActionNamedName {
+    #[must_use]
+    pub const fn as_raw(self) -> i32 {
+        self as i32
+    }
+
+    #[must_use]
+    pub const fn from_raw(raw: i32) -> Option<Self> {
+        match raw {
+            0 => Some(Self::None),
+            1 => Some(Self::NextPage),
+            2 => Some(Self::PreviousPage),
+            3 => Some(Self::FirstPage),
+            4 => Some(Self::LastPage),
+            5 => Some(Self::GoBack),
+            6 => Some(Self::GoForward),
+            7 => Some(Self::GoToPage),
+            8 => Some(Self::Find),
+            9 => Some(Self::Print),
+            10 => Some(Self::ZoomIn),
+            11 => Some(Self::ZoomOut),
+            _ => None,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(i32)]
+pub enum PdfLineStyle {
+    None = 0,
+    Square = 1,
+    Circle = 2,
+    Diamond = 3,
+    OpenArrow = 4,
+    ClosedArrow = 5,
+}
+
+impl PdfLineStyle {
+    #[must_use]
+    pub const fn from_raw(raw: i32) -> Option<Self> {
+        match raw {
+            0 => Some(Self::None),
+            1 => Some(Self::Square),
+            2 => Some(Self::Circle),
+            3 => Some(Self::Diamond),
+            4 => Some(Self::OpenArrow),
+            5 => Some(Self::ClosedArrow),
+            _ => None,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(i32)]
+pub enum PdfMarkupType {
+    Highlight = 0,
+    StrikeOut = 1,
+    Underline = 2,
+    Redact = 3,
+}
+
+impl PdfMarkupType {
+    #[must_use]
+    pub const fn from_raw(raw: i32) -> Option<Self> {
+        match raw {
+            0 => Some(Self::Highlight),
+            1 => Some(Self::StrikeOut),
+            2 => Some(Self::Underline),
+            3 => Some(Self::Redact),
             _ => None,
         }
     }
@@ -221,6 +312,54 @@ pub struct PdfDocumentAttributes {
     pub creation_date: Option<String>,
     pub modification_date: Option<String>,
     pub keywords: Option<Vec<String>>,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize)]
+pub struct PdfDocumentWriteOptions {
+    pub owner_password: Option<String>,
+    pub user_password: Option<String>,
+    pub access_permissions: Option<u64>,
+    pub burn_in_annotations: bool,
+    pub save_text_from_ocr: bool,
+    pub save_images_as_jpeg: bool,
+    pub optimize_images_for_screen: bool,
+}
+
+impl PdfDocumentWriteOptions {
+    pub fn with_owner_password(mut self, value: impl Into<String>) -> Self {
+        self.owner_password = Some(value.into());
+        self
+    }
+
+    pub fn with_user_password(mut self, value: impl Into<String>) -> Self {
+        self.user_password = Some(value.into());
+        self
+    }
+
+    pub fn with_access_permissions(mut self, value: u64) -> Self {
+        self.access_permissions = Some(value);
+        self
+    }
+
+    pub fn with_burn_in_annotations(mut self, value: bool) -> Self {
+        self.burn_in_annotations = value;
+        self
+    }
+
+    pub fn with_save_text_from_ocr(mut self, value: bool) -> Self {
+        self.save_text_from_ocr = value;
+        self
+    }
+
+    pub fn with_save_images_as_jpeg(mut self, value: bool) -> Self {
+        self.save_images_as_jpeg = value;
+        self
+    }
+
+    pub fn with_optimize_images_for_screen(mut self, value: bool) -> Self {
+        self.optimize_images_for_screen = value;
+        self
+    }
 }
 
 #[derive(Debug, Clone, Deserialize)]

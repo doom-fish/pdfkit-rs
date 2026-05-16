@@ -90,6 +90,28 @@ public func pdf_annotation_set_border(
     }
 }
 
+@_cdecl("pdf_annotation_action")
+public func pdf_annotation_action(_ handle: UnsafeMutableRawPointer?) -> UnsafeMutableRawPointer? {
+    guard let annotation = pdf_annotation_value(handle), let action = annotation.action else {
+        return nil
+    }
+    return pdf_retain_action(action)
+}
+
+@_cdecl("pdf_annotation_set_action")
+public func pdf_annotation_set_action(
+    _ annotationHandle: UnsafeMutableRawPointer?,
+    _ actionHandle: UnsafeMutableRawPointer?,
+    _ outError: UnsafeMutablePointer<UnsafeMutablePointer<CChar>?>?
+) -> Int32 {
+    pdf_run(outError) {
+        guard let annotation = pdf_annotation_value(annotationHandle) else {
+            throw PDFBridgeError.invalidArgument("missing annotation handle")
+        }
+        annotation.action = pdf_any_action_value(actionHandle)
+    }
+}
+
 @_cdecl("pdf_annotation_action_url")
 public func pdf_annotation_action_url(_ handle: UnsafeMutableRawPointer?) -> UnsafeMutableRawPointer? {
     guard let annotation = pdf_annotation_value(handle), let action = annotation.action as? PDFActionURL else {

@@ -25,16 +25,12 @@ unsafe extern "C" {
         border_handle: *mut c_void,
         out_error_message: *mut *mut c_char,
     ) -> i32;
+    pub fn pdf_annotation_action(handle: *mut c_void) -> *mut c_void;
+    pub fn pdf_annotation_set_action(
+        annotation_handle: *mut c_void,
+        action_handle: *mut c_void,
+        out_error_message: *mut *mut c_char,
+    ) -> i32;
     pub fn pdf_annotation_action_url(handle: *mut c_void) -> *mut c_void;
-    pub fn pdf_annotation_set_action_url(
-        annotation_handle: *mut c_void,
-        action_handle: *mut c_void,
-        out_error_message: *mut *mut c_char,
-    ) -> i32;
     pub fn pdf_annotation_action_goto(handle: *mut c_void) -> *mut c_void;
-    pub fn pdf_annotation_set_action_goto(
-        annotation_handle: *mut c_void,
-        action_handle: *mut c_void,
-        out_error_message: *mut *mut c_char,
-    ) -> i32;
 }
