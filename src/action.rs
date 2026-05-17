@@ -1,6 +1,7 @@
 use crate::action_goto::PdfActionGoTo;
 use crate::action_named::PdfActionNamed;
 use crate::action_remote_goto::PdfActionRemoteGoTo;
+use crate::action_reset_form::PdfActionResetForm;
 use crate::action_url::PdfActionUrl;
 use crate::ffi;
 use crate::handle::ObjectHandle;
@@ -52,6 +53,12 @@ impl PdfAction {
     pub fn as_remote_goto(&self) -> Option<PdfActionRemoteGoTo> {
         let ptr = unsafe { ffi::pdf_action_as_remote_goto(self.handle.as_ptr()) };
         unsafe { ObjectHandle::from_retained_ptr(ptr) }.map(PdfActionRemoteGoTo::from_handle)
+    }
+
+    #[must_use]
+    pub fn as_reset_form(&self) -> Option<PdfActionResetForm> {
+        let ptr = unsafe { ffi::pdf_action_as_reset_form(self.handle.as_ptr()) };
+        unsafe { ObjectHandle::from_retained_ptr(ptr) }.map(PdfActionResetForm::from_handle)
     }
 
     pub(crate) fn as_handle_ptr(&self) -> *mut core::ffi::c_void {

@@ -1,12 +1,12 @@
 use std::ptr;
 
 use crate::annotation::PdfAnnotation;
-use crate::error::Result;
+use crate::error::{PdfKitError, Result};
 use crate::ffi;
 use crate::handle::ObjectHandle;
 use crate::selection::PdfSelection;
-use crate::types::{DisplayBox, PdfPoint, PdfRect};
-use crate::util::take_string;
+use crate::types::{DisplayBox, PdfPageImageInitializationOptions, PdfPoint, PdfRect};
+use crate::util::{c_string, take_string};
 
 #[derive(Debug, Clone)]
 pub struct PdfPage {
@@ -22,6 +22,35 @@ impl PdfPage {
         let mut out_page = ptr::null_mut();
         let mut out_error = ptr::null_mut();
         let status = unsafe { ffi::pdf_page_new(&mut out_page, &mut out_error) };
+        crate::util::status_result(status, out_error)?;
+        Ok(Self::from_handle(crate::util::required_handle(
+            out_page,
+            "PDFPage",
+        )?))
+    }
+
+    pub fn from_image_data(
+        image_data: &[u8],
+        options: &PdfPageImageInitializationOptions,
+    ) -> Result<Self> {
+        let options_json = serde_json::to_string(options).map_err(|error| {
+            PdfKitError::new(
+                ffi::status::FRAMEWORK,
+                format!("failed to encode PDFPage image initialization options: {error}"),
+            )
+        })?;
+        let options_json = c_string(&options_json)?;
+        let mut out_page = ptr::null_mut();
+        let mut out_error = ptr::null_mut();
+        let status = unsafe {
+            ffi::pdf_page_new_with_image_data(
+                image_data.as_ptr(),
+                image_data.len(),
+                options_json.as_ptr(),
+                &mut out_page,
+                &mut out_error,
+            )
+        };
         crate::util::status_result(status, out_error)?;
         Ok(Self::from_handle(crate::util::required_handle(
             out_page,

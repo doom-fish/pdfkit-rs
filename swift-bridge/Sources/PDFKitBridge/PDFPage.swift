@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import PDFKit
 
@@ -12,6 +13,70 @@ public func pdf_page_new(
         }
         outPage.pointee = pdf_retain_page(PDFPage())
     }
+}
+
+@_cdecl("pdf_page_new_with_image_data")
+public func pdf_page_new_with_image_data(
+    _ imageDataPtr: UnsafePointer<UInt8>?,
+    _ imageDataLen: Int,
+    _ optionsJSON: UnsafePointer<CChar>?,
+    _ outPage: UnsafeMutablePointer<UnsafeMutableRawPointer?>?,
+    _ outError: UnsafeMutablePointer<UnsafeMutablePointer<CChar>?>?
+) -> Int32 {
+    pdf_run(outError) {
+        guard let imageDataPtr, imageDataLen > 0, let outPage else {
+            throw PDFBridgeError.invalidArgument("missing image data or page output pointer")
+        }
+        let data = Data(bytes: imageDataPtr, count: imageDataLen)
+        guard let image = NSImage(data: data) else {
+            throw PDFBridgeError.nullResult("failed to decode image data for PDFPage initialization")
+        }
+        if #available(macOS 13.0, *) {
+            let options = try pdf_page_image_initialization_options(pdf_optional_string(optionsJSON))
+            guard let page = PDFPage(image: image, options: options) else {
+                throw PDFBridgeError.nullResult("PDFPage(image:options:) returned nil")
+            }
+            outPage.pointee = pdf_retain_page(page)
+        } else {
+            throw PDFBridgeError.framework("PDFPage image initialization options require macOS 13.0")
+        }
+    }
+}
+
+@available(macOS 13.0, *)
+private func pdf_page_image_initialization_options(_ json: String?) throws -> [PDFPage.ImageInitializationOption: Any] {
+    guard let json, !json.isEmpty else {
+        return [:]
+    }
+    let data = Data(json.utf8)
+    guard let raw = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+        throw PDFBridgeError.invalidArgument("PDFPage image initialization options must decode to a JSON object")
+    }
+
+    var options: [PDFPage.ImageInitializationOption: Any] = [:]
+    if let mediaBox = raw["media_box"] as? [String: Any] {
+        let x = mediaBox["x"] as? Double ?? 0
+        let y = mediaBox["y"] as? Double ?? 0
+        let width = mediaBox["width"] as? Double ?? 0
+        let height = mediaBox["height"] as? Double ?? 0
+        options[.mediaBox] = NSValue(rect: CGRect(x: x, y: y, width: width, height: height))
+    }
+    if let rotation = raw["rotation"] as? Int {
+        guard rotation % 90 == 0 else {
+            throw PDFBridgeError.invalidArgument("PDFPage image rotation must be a multiple of 90 degrees")
+        }
+        options[.rotation] = rotation
+    }
+    if let upscaleIfSmaller = raw["upscale_if_smaller"] as? Bool, upscaleIfSmaller {
+        options[.upscaleIfSmaller] = true
+    }
+    if let compressionQuality = raw["compression_quality"] as? Double {
+        guard (0 ... 1).contains(compressionQuality) else {
+            throw PDFBridgeError.invalidArgument("PDFPage image compression quality must be between 0.0 and 1.0")
+        }
+        options[.compressionQuality] = compressionQuality
+    }
+    return options
 }
 
 @_cdecl("pdf_page_label_string")

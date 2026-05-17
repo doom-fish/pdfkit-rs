@@ -44,6 +44,16 @@ unsafe extern "C" {
         end_x: f64,
         end_y: f64,
     ) -> *mut c_void;
+    pub fn pdf_document_selection_from_pages_points_with_granularity(
+        document_handle: *mut c_void,
+        start_page_handle: *mut c_void,
+        start_x: f64,
+        start_y: f64,
+        end_page_handle: *mut c_void,
+        end_x: f64,
+        end_y: f64,
+        granularity: u64,
+    ) -> *mut c_void;
     pub fn pdf_document_selection_from_pages_characters(
         document_handle: *mut c_void,
         start_page_handle: *mut c_void,

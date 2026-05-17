@@ -16,6 +16,16 @@ unsafe extern "C" {
         document_handle: *mut c_void,
         out_error_message: *mut *mut c_char,
     ) -> i32;
+    pub fn pdf_view_set_delegate(
+        view_handle: *mut c_void,
+        delegate_handle: *mut c_void,
+        out_error_message: *mut *mut c_char,
+    ) -> i32;
+    pub fn pdf_view_set_page_overlay_view_provider(
+        view_handle: *mut c_void,
+        provider_handle: *mut c_void,
+        out_error_message: *mut *mut c_char,
+    ) -> i32;
     pub fn pdf_view_current_page(handle: *mut c_void) -> *mut c_void;
     pub fn pdf_view_current_destination(handle: *mut c_void) -> *mut c_void;
     pub fn pdf_view_current_selection(handle: *mut c_void) -> *mut c_void;
@@ -61,6 +71,7 @@ unsafe extern "C" {
     pub fn pdf_view_set_min_scale_factor(handle: *mut c_void, value: f64);
     pub fn pdf_view_set_max_scale_factor(handle: *mut c_void, value: f64);
     pub fn pdf_view_layout_document_view(handle: *mut c_void);
+    pub fn pdf_view_area_of_interest_for_point(handle: *mut c_void, x: f64, y: f64) -> u64;
     pub fn pdf_view_visible_page_count(handle: *mut c_void) -> u64;
     pub fn pdf_view_visible_page_at(handle: *mut c_void, index: u64) -> *mut c_void;
 }

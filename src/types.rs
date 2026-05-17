@@ -1,6 +1,8 @@
+use std::ops::{BitAnd, BitAndAssign, BitOr, BitOrAssign};
+
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Copy, PartialEq, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Deserialize, Serialize)]
 pub struct PdfRect {
     pub x: f64,
     pub y: f64,
@@ -154,6 +156,39 @@ impl PdfLineStyle {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(i32)]
+pub enum PdfTextAnnotationIconType {
+    Comment = 0,
+    Key = 1,
+    Note = 2,
+    Help = 3,
+    NewParagraph = 4,
+    Paragraph = 5,
+    Insert = 6,
+}
+
+impl PdfTextAnnotationIconType {
+    #[must_use]
+    pub const fn as_raw(self) -> i32 {
+        self as i32
+    }
+
+    #[must_use]
+    pub const fn from_raw(raw: i32) -> Option<Self> {
+        match raw {
+            0 => Some(Self::Comment),
+            1 => Some(Self::Key),
+            2 => Some(Self::Note),
+            3 => Some(Self::Help),
+            4 => Some(Self::NewParagraph),
+            5 => Some(Self::Paragraph),
+            6 => Some(Self::Insert),
+            _ => None,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(i32)]
 pub enum PdfMarkupType {
     Highlight = 0,
     StrikeOut = 1,
@@ -234,6 +269,76 @@ impl PdfInterpolationQuality {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct PdfAreaOfInterest(u64);
+
+impl PdfAreaOfInterest {
+    pub const NONE: Self = Self(0);
+    pub const PAGE: Self = Self(1 << 0);
+    pub const TEXT: Self = Self(1 << 1);
+    pub const ANNOTATION: Self = Self(1 << 2);
+    pub const LINK: Self = Self(1 << 3);
+    pub const CONTROL: Self = Self(1 << 4);
+    pub const TEXT_FIELD: Self = Self(1 << 5);
+    pub const ICON: Self = Self(1 << 6);
+    pub const POPUP: Self = Self(1 << 7);
+    pub const IMAGE: Self = Self(1 << 8);
+    pub const ANY: Self = Self(i64::MAX as u64);
+
+    #[must_use]
+    pub const fn from_bits(bits: u64) -> Self {
+        Self(bits)
+    }
+
+    #[must_use]
+    pub const fn bits(self) -> u64 {
+        self.0
+    }
+
+    #[must_use]
+    pub const fn is_empty(self) -> bool {
+        self.0 == 0
+    }
+
+    #[must_use]
+    pub const fn contains(self, other: Self) -> bool {
+        (self.0 & other.0) == other.0
+    }
+
+    #[must_use]
+    pub const fn intersects(self, other: Self) -> bool {
+        (self.0 & other.0) != 0
+    }
+}
+
+impl BitOr for PdfAreaOfInterest {
+    type Output = Self;
+
+    fn bitor(self, rhs: Self) -> Self::Output {
+        Self(self.0 | rhs.0)
+    }
+}
+
+impl BitOrAssign for PdfAreaOfInterest {
+    fn bitor_assign(&mut self, rhs: Self) {
+        self.0 |= rhs.0;
+    }
+}
+
+impl BitAnd for PdfAreaOfInterest {
+    type Output = Self;
+
+    fn bitand(self, rhs: Self) -> Self::Output {
+        Self(self.0 & rhs.0)
+    }
+}
+
+impl BitAndAssign for PdfAreaOfInterest {
+    fn bitand_assign(&mut self, rhs: Self) {
+        self.0 &= rhs.0;
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(i32)]
 pub enum PdfWidgetControlType {
@@ -258,6 +363,56 @@ impl PdfWidgetControlType {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(i32)]
+pub enum PdfWidgetCellState {
+    Mixed = -1,
+    Off = 0,
+    On = 1,
+}
+
+impl PdfWidgetCellState {
+    #[must_use]
+    pub const fn as_raw(self) -> i32 {
+        self as i32
+    }
+
+    #[must_use]
+    pub const fn from_raw(raw: i32) -> Option<Self> {
+        match raw {
+            -1 => Some(Self::Mixed),
+            0 => Some(Self::Off),
+            1 => Some(Self::On),
+            _ => None,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(i32)]
+pub enum PdfPrintScalingMode {
+    None = 0,
+    ToFit = 1,
+    DownToFit = 2,
+}
+
+impl PdfPrintScalingMode {
+    #[must_use]
+    pub const fn as_raw(self) -> i32 {
+        self as i32
+    }
+
+    #[must_use]
+    pub const fn from_raw(raw: i32) -> Option<Self> {
+        match raw {
+            0 => Some(Self::None),
+            1 => Some(Self::ToFit),
+            2 => Some(Self::DownToFit),
+            _ => None,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(i32)]
 pub enum PdfDocumentPermissions {
     None = 0,
     User = 1,
@@ -271,6 +426,31 @@ impl PdfDocumentPermissions {
             0 => Some(Self::None),
             1 => Some(Self::User),
             2 => Some(Self::Owner),
+            _ => None,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(u64)]
+pub enum PdfSelectionGranularity {
+    Character = 0,
+    Word = 1,
+    Line = 2,
+}
+
+impl PdfSelectionGranularity {
+    #[must_use]
+    pub const fn as_raw(self) -> u64 {
+        self as u64
+    }
+
+    #[must_use]
+    pub const fn from_raw(raw: u64) -> Option<Self> {
+        match raw {
+            0 => Some(Self::Character),
+            1 => Some(Self::Word),
+            2 => Some(Self::Line),
             _ => None,
         }
     }
@@ -312,6 +492,36 @@ pub struct PdfDocumentAttributes {
     pub creation_date: Option<String>,
     pub modification_date: Option<String>,
     pub keywords: Option<Vec<String>>,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Serialize)]
+pub struct PdfPageImageInitializationOptions {
+    pub media_box: Option<PdfRect>,
+    pub rotation: Option<i32>,
+    pub upscale_if_smaller: bool,
+    pub compression_quality: Option<f64>,
+}
+
+impl PdfPageImageInitializationOptions {
+    pub fn with_media_box(mut self, value: PdfRect) -> Self {
+        self.media_box = Some(value);
+        self
+    }
+
+    pub fn with_rotation(mut self, value: i32) -> Self {
+        self.rotation = Some(value);
+        self
+    }
+
+    pub fn with_upscale_if_smaller(mut self, value: bool) -> Self {
+        self.upscale_if_smaller = value;
+        self
+    }
+
+    pub fn with_compression_quality(mut self, value: f64) -> Self {
+        self.compression_quality = Some(value);
+        self
+    }
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize)]
@@ -465,6 +675,29 @@ impl PdfViewInfo {
             2 => Some(DisplayBox::BleedBox),
             3 => Some(DisplayBox::TrimBox),
             4 => Some(DisplayBox::ArtBox),
+            _ => None,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(i32)]
+pub enum PdfThumbnailLayoutMode {
+    Vertical = 0,
+    Horizontal = 1,
+}
+
+impl PdfThumbnailLayoutMode {
+    #[must_use]
+    pub const fn as_raw(self) -> i32 {
+        self as i32
+    }
+
+    #[must_use]
+    pub const fn from_raw(raw: i32) -> Option<Self> {
+        match raw {
+            0 => Some(Self::Vertical),
+            1 => Some(Self::Horizontal),
             _ => None,
         }
     }

@@ -295,6 +295,181 @@ fn advanced_action_delegate_notification_and_option_surface_is_present() {
     );
 }
 
+#[allow(clippy::too_many_lines)]
+#[test]
+fn exhaustive_gap_closure_surface_is_present() {
+    let action_reset_form_header = read_header("PDFActionResetForm");
+    let annotation_header = read_header("PDFAnnotation");
+    let annotation_utilities_header = read_header("PDFAnnotationUtilities");
+    let destination_header = read_header("PDFDestination");
+    let document_header = read_header("PDFDocument");
+    let page_header = read_header("PDFPage");
+    let page_overlay_header = read_header("PDFPageOverlayViewProvider");
+    let selection_header = read_header("PDFSelection");
+    let thumbnail_header = read_header("PDFThumbnailView");
+    let view_header = read_header("PDFView");
+
+    assert_contains_all(
+        &action_reset_form_header,
+        &[
+            "@interface PDFActionResetForm : PDFAction <NSCopying>",
+            "@property (nonatomic, copy, nullable) NSArray<NSString*> *fields;",
+            "@property (nonatomic) BOOL fieldsIncludedAreCleared;",
+        ],
+    );
+    assert_contains_all(
+        &annotation_header,
+        &[
+            "typedef NSString* const PDFAnnotationKey NS_STRING_ENUM;",
+            "PDFAnnotationKey PDFAnnotationKeyAdditionalActions",
+            "PDFAnnotationKey PDFAnnotationKeyWidgetValue",
+        ],
+    );
+    assert_contains_all(
+        &annotation_utilities_header,
+        &[
+            "typedef NS_ENUM(NSInteger, PDFTextAnnotationIconType)",
+            "typedef NS_ENUM(NSInteger, PDFWidgetCellState)",
+            "PDFAnnotationSubtype PDFAnnotationSubtypeWidget",
+            "PDFAnnotationHighlightingMode PDFAnnotationHighlightingModePush",
+        ],
+    );
+    assert_contains_all(
+        &destination_header,
+        &["kPDFDestinationUnspecifiedValue"],
+    );
+    assert_contains_all(
+        &document_header,
+        &[
+            "typedef NS_ENUM(NSInteger, PDFPrintScalingMode)",
+            "typedef NS_ENUM(NSUInteger, PDFSelectionGranularity);",
+            "withGranularity:(PDFSelectionGranularity)granularity",
+        ],
+    );
+    assert_contains_all(
+        &page_header,
+        &[
+            "typedef NS_OPTIONS(NSInteger, PDFAreaOfInterest)",
+            "typedef NSString * PDFPageImageInitializationOption",
+            "initWithImage:(PDFKitPlatformImage *)image options:",
+        ],
+    );
+    assert_contains_all(
+        &page_overlay_header,
+        &[
+            "@protocol PDFPageOverlayViewProvider <NSObject>",
+            "overlayViewForPage:(PDFPage*)page",
+        ],
+    );
+    assert_contains_all(
+        &selection_header,
+        &["typedef NS_ENUM(NSUInteger, PDFSelectionGranularity)"],
+    );
+    assert_contains_all(
+        &thumbnail_header,
+        &["typedef NS_ENUM(NSInteger, PDFThumbnailLayoutMode)"],
+    );
+    assert_contains_all(
+        &view_header,
+        &[
+            "@property (nonatomic, weak, nullable) id< PDFViewDelegate > delegate;",
+            "@property (nonatomic, weak, nullable) id<PDFPageOverlayViewProvider> pageOverlayViewProvider",
+            "- (PDFAreaOfInterest)areaOfInterestForPoint:(PDFPoint)cursorLocation;",
+            "@protocol PDFViewDelegate< NSObject >",
+        ],
+    );
+
+    let bridge = read_bridge();
+    assert_contains_all(
+        &bridge,
+        &[
+            "pdf_action_as_reset_form",
+            "pdf_action_reset_form_new",
+            "pdf_document_selection_from_pages_points_with_granularity",
+            "pdf_page_new_with_image_data",
+            "pdf_page_overlay_view_new",
+            "pdf_page_overlay_view_provider_new",
+            "pdf_view_set_delegate",
+            "pdf_view_set_page_overlay_view_provider",
+            "pdf_view_area_of_interest_for_point",
+            "pdf_view_delegate_new",
+        ],
+    );
+
+    let action_reset_form_src = read_src("action_reset_form.rs");
+    assert_contains_all(
+        &action_reset_form_src,
+        &[
+            "pub struct PdfActionResetForm",
+            "pub fn fields(&self) -> Result<Vec<String>>",
+            "pub fn set_fields<I, S>(&self, fields: I) -> Result<()>",
+        ],
+    );
+
+    let annotation_constants_src = read_src("annotation_constants.rs");
+    assert_contains_all(
+        &annotation_constants_src,
+        &[
+            "pub enum PdfAnnotationKey",
+            "pub enum PdfAnnotationSubtype",
+            "pub enum PdfAnnotationTextIconName",
+            "pub enum PdfAnnotationWidgetSubtype",
+        ],
+    );
+
+    let page_src = read_src("page.rs");
+    assert_contains_all(
+        &page_src,
+        &[
+            "PdfPageImageInitializationOptions",
+            "pub fn from_image_data(",
+        ],
+    );
+
+    let page_overlay_provider_src = read_src("page_overlay_view_provider.rs");
+    assert_contains_all(
+        &page_overlay_provider_src,
+        &[
+            "pub trait PdfPageOverlayViewProvider",
+            "pub struct PdfPageOverlayViewProviderHandle",
+        ],
+    );
+
+    let types_src = read_src("types.rs");
+    assert_contains_all(
+        &types_src,
+        &[
+            "pub enum PdfTextAnnotationIconType",
+            "pub enum PdfWidgetCellState",
+            "pub struct PdfAreaOfInterest(u64);",
+            "pub enum PdfPrintScalingMode",
+            "pub enum PdfSelectionGranularity",
+            "pub enum PdfThumbnailLayoutMode",
+            "pub struct PdfPageImageInitializationOptions",
+        ],
+    );
+
+    let view_src = read_src("view.rs");
+    assert_contains_all(
+        &view_src,
+        &[
+            "pub fn set_delegate(&self, delegate: Option<&PdfViewDelegateHandle>) -> Result<()>",
+            "pub fn set_page_overlay_view_provider(",
+            "pub fn area_of_interest_for_point(&self, point: PdfPoint) -> PdfAreaOfInterest",
+        ],
+    );
+
+    let view_delegate_src = read_src("view_delegate.rs");
+    assert_contains_all(
+        &view_delegate_src,
+        &[
+            "pub trait PdfViewDelegate",
+            "pub struct PdfViewDelegateHandle",
+            "fn handle_link_click(&mut self, _view: PdfView, _url: &str) -> bool",
+        ],
+    );
+}
+
 #[test]
 fn accessibility_node_status_surface_is_present() {
     let bridge = read_bridge();

@@ -6,9 +6,14 @@ use crate::error::Result;
 use crate::ffi;
 use crate::handle::ObjectHandle;
 use crate::page::PdfPage;
+use crate::page_overlay_view_provider::PdfPageOverlayViewProviderHandle;
 use crate::selection::PdfSelection;
-use crate::types::{DisplayBox, PdfDisplayDirection, PdfDisplayMode, PdfSize, PdfViewInfo};
+use crate::types::{
+    DisplayBox, PdfAreaOfInterest, PdfDisplayDirection, PdfDisplayMode, PdfPoint, PdfSize,
+    PdfViewInfo,
+};
 use crate::util::parse_json;
+use crate::view_delegate::PdfViewDelegateHandle;
 
 #[derive(Debug, Clone)]
 pub struct PdfView {
@@ -47,6 +52,33 @@ impl PdfView {
             ffi::pdf_view_set_document(
                 self.handle.as_ptr(),
                 document.map_or(ptr::null_mut(), PdfDocument::as_handle_ptr),
+                &mut out_error,
+            )
+        };
+        crate::util::status_result(status, out_error)
+    }
+
+    pub fn set_delegate(&self, delegate: Option<&PdfViewDelegateHandle>) -> Result<()> {
+        let mut out_error = ptr::null_mut();
+        let status = unsafe {
+            ffi::pdf_view_set_delegate(
+                self.handle.as_ptr(),
+                delegate.map_or(ptr::null_mut(), PdfViewDelegateHandle::as_handle_ptr),
+                &mut out_error,
+            )
+        };
+        crate::util::status_result(status, out_error)
+    }
+
+    pub fn set_page_overlay_view_provider(
+        &self,
+        provider: Option<&PdfPageOverlayViewProviderHandle>,
+    ) -> Result<()> {
+        let mut out_error = ptr::null_mut();
+        let status = unsafe {
+            ffi::pdf_view_set_page_overlay_view_provider(
+                self.handle.as_ptr(),
+                provider.map_or(ptr::null_mut(), PdfPageOverlayViewProviderHandle::as_handle_ptr),
                 &mut out_error,
             )
         };
@@ -158,6 +190,13 @@ impl PdfView {
 
     pub fn layout_document_view(&self) {
         unsafe { ffi::pdf_view_layout_document_view(self.handle.as_ptr()) };
+    }
+
+    #[must_use]
+    pub fn area_of_interest_for_point(&self, point: PdfPoint) -> PdfAreaOfInterest {
+        PdfAreaOfInterest::from_bits(unsafe {
+            ffi::pdf_view_area_of_interest_for_point(self.handle.as_ptr(), point.x, point.y)
+        })
     }
 
     #[must_use]

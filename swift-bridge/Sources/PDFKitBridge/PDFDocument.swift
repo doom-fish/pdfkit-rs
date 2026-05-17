@@ -264,6 +264,40 @@ public func pdf_document_selection_from_pages_points(
     return selection.map(pdf_retain_selection)
 }
 
+@_cdecl("pdf_document_selection_from_pages_points_with_granularity")
+public func pdf_document_selection_from_pages_points_with_granularity(
+    _ documentHandle: UnsafeMutableRawPointer?,
+    _ startPageHandle: UnsafeMutableRawPointer?,
+    _ startX: Double,
+    _ startY: Double,
+    _ endPageHandle: UnsafeMutableRawPointer?,
+    _ endX: Double,
+    _ endY: Double,
+    _ granularityRaw: UInt64
+) -> UnsafeMutableRawPointer? {
+    guard let document = pdf_document_value(documentHandle),
+          let startPage = pdf_page_value(startPageHandle),
+          let endPage = pdf_page_value(endPageHandle)
+    else {
+        return nil
+    }
+    guard startPage.document === document, endPage.document === document else { return nil }
+    guard let granularity = PDFSelectionGranularity(rawValue: UInt(granularityRaw)) else {
+        return nil
+    }
+    if #available(macOS 15.0, *) {
+        let selection = document.selection(
+            from: startPage,
+            at: CGPoint(x: startX, y: startY),
+            to: endPage,
+            at: CGPoint(x: endX, y: endY),
+            with: granularity
+        )
+        return selection.map(pdf_retain_selection)
+    }
+    return nil
+}
+
 @_cdecl("pdf_document_selection_from_pages_characters")
 public func pdf_document_selection_from_pages_characters(
     _ documentHandle: UnsafeMutableRawPointer?,

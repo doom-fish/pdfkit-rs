@@ -76,6 +76,38 @@ public func pdf_view_set_document(
     }
 }
 
+@_cdecl("pdf_view_set_delegate")
+public func pdf_view_set_delegate(
+    _ viewHandle: UnsafeMutableRawPointer?,
+    _ delegateHandle: UnsafeMutableRawPointer?,
+    _ outError: UnsafeMutablePointer<UnsafeMutablePointer<CChar>?>?
+) -> Int32 {
+    pdf_run(outError) {
+        guard let view = pdf_view_value(viewHandle) else {
+            throw PDFBridgeError.invalidArgument("missing view handle")
+        }
+        view.delegate = pdf_view_delegate_value(delegateHandle)
+    }
+}
+
+@_cdecl("pdf_view_set_page_overlay_view_provider")
+public func pdf_view_set_page_overlay_view_provider(
+    _ viewHandle: UnsafeMutableRawPointer?,
+    _ providerHandle: UnsafeMutableRawPointer?,
+    _ outError: UnsafeMutablePointer<UnsafeMutablePointer<CChar>?>?
+) -> Int32 {
+    pdf_run(outError) {
+        guard let view = pdf_view_value(viewHandle) else {
+            throw PDFBridgeError.invalidArgument("missing view handle")
+        }
+        if #available(macOS 13.0, *) {
+            view.pageOverlayViewProvider = pdf_page_overlay_view_provider_value(providerHandle)
+        } else if providerHandle != nil {
+            throw PDFBridgeError.framework("PDFView.pageOverlayViewProvider requires macOS 13.0")
+        }
+    }
+}
+
 @_cdecl("pdf_view_current_page")
 public func pdf_view_current_page(_ handle: UnsafeMutableRawPointer?) -> UnsafeMutableRawPointer? {
     guard let view = pdf_view_value(handle), let page = view.currentPage else {
@@ -233,6 +265,17 @@ public func pdf_view_set_max_scale_factor(_ handle: UnsafeMutableRawPointer?, _ 
 public func pdf_view_layout_document_view(_ handle: UnsafeMutableRawPointer?) {
     guard let view = pdf_view_value(handle) else { return }
     view.layoutDocumentView()
+}
+
+@_cdecl("pdf_view_area_of_interest_for_point")
+public func pdf_view_area_of_interest_for_point(
+    _ handle: UnsafeMutableRawPointer?,
+    _ x: Double,
+    _ y: Double
+) -> UInt64 {
+    guard let view = pdf_view_value(handle) else { return 0 }
+    let rawValue = Int64(view.areaOfInterest(for: CGPoint(x: x, y: y)).rawValue)
+    return UInt64(bitPattern: rawValue)
 }
 
 @_cdecl("pdf_view_visible_page_count")

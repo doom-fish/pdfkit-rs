@@ -1,10 +1,10 @@
 # pdfkit-rs coverage audit (vs MacOSX26.2.sdk)
 
 SDK_PUBLIC_SYMBOLS: 215
-VERIFIED: 84
-GAPS: 82
+VERIFIED: 166
+GAPS: 0
 EXEMPT: 49
-COVERAGE_PCT: 50.60
+COVERAGE_PCT: 100.00
 
 Methodology:
 - Parsed top-level Objective-C declarations from `/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk/System/Library/Frameworks/PDFKit.framework/Headers`: `@interface`, `@protocol`, `typedef NS_ENUM/NS_OPTIONS`, and exported constants.
@@ -99,92 +99,91 @@ Methodology:
 | `PDFViewScaleChangedNotification` | constant | `PDFView.h` | PdfViewNotification::ScaleChanged.name() |
 | `PDFViewSelectionChangedNotification` | constant | `PDFView.h` | PdfViewNotification::SelectionChanged.name() |
 | `PDFViewVisiblePagesChangedNotification` | constant | `PDFView.h` | PdfViewNotification::VisiblePagesChanged.name() |
+| `PDFActionResetForm` | interface | `PDFActionResetForm.h` | PdfActionResetForm::{new, fields, set_fields, clear_fields, fields_included_are_cleared, set_fields_included_are_cleared, action_type} + PdfAction::{as_reset_form} |
+| `PDFAnnotationKeyAdditionalActions` | constant | `PDFAnnotation.h` | PdfAnnotationKey::AdditionalActions.name() |
+| `PDFAnnotationKeyAppearanceDictionary` | constant | `PDFAnnotation.h` | PdfAnnotationKey::AppearanceDictionary.name() |
+| `PDFAnnotationKeyAppearanceState` | constant | `PDFAnnotation.h` | PdfAnnotationKey::AppearanceState.name() |
+| `PDFAnnotationKeyDefaultAppearance` | constant | `PDFAnnotation.h` | PdfAnnotationKey::DefaultAppearance.name() |
+| `PDFAnnotationKeyDestination` | constant | `PDFAnnotation.h` | PdfAnnotationKey::Destination.name() |
+| `PDFAnnotationKeyFlags` | constant | `PDFAnnotation.h` | PdfAnnotationKey::Flags.name() |
+| `PDFAnnotationKeyHighlightingMode` | constant | `PDFAnnotation.h` | PdfAnnotationKey::HighlightingMode.name() |
+| `PDFAnnotationKeyIconName` | constant | `PDFAnnotation.h` | PdfAnnotationKey::IconName.name() |
+| `PDFAnnotationKeyInklist` | constant | `PDFAnnotation.h` | PdfAnnotationKey::InkList.name() |
+| `PDFAnnotationKeyInteriorColor` | constant | `PDFAnnotation.h` | PdfAnnotationKey::InteriorColor.name() |
+| `PDFAnnotationKeyLineEndingStyles` | constant | `PDFAnnotation.h` | PdfAnnotationKey::LineEndingStyles.name() |
+| `PDFAnnotationKeyLinePoints` | constant | `PDFAnnotation.h` | PdfAnnotationKey::LinePoints.name() |
+| `PDFAnnotationKeyName` | constant | `PDFAnnotation.h` | PdfAnnotationKey::Name.name() |
+| `PDFAnnotationKeyOpen` | constant | `PDFAnnotation.h` | PdfAnnotationKey::Open.name() |
+| `PDFAnnotationKeyPage` | constant | `PDFAnnotation.h` | PdfAnnotationKey::Page.name() |
+| `PDFAnnotationKeyParent` | constant | `PDFAnnotation.h` | PdfAnnotationKey::Parent.name() |
+| `PDFAnnotationKeyPopup` | constant | `PDFAnnotation.h` | PdfAnnotationKey::Popup.name() |
+| `PDFAnnotationKeyQuadPoints` | constant | `PDFAnnotation.h` | PdfAnnotationKey::QuadPoints.name() |
+| `PDFAnnotationKeyQuadding` | constant | `PDFAnnotation.h` | PdfAnnotationKey::Quadding.name() |
+| `PDFAnnotationKeyTextLabel` | constant | `PDFAnnotation.h` | PdfAnnotationKey::TextLabel.name() |
+| `PDFAnnotationKeyWidgetAppearanceDictionary` | constant | `PDFAnnotation.h` | PdfAnnotationKey::WidgetAppearanceDictionary.name() |
+| `PDFAnnotationKeyWidgetBackgroundColor` | constant | `PDFAnnotation.h` | PdfAnnotationKey::WidgetBackgroundColor.name() |
+| `PDFAnnotationKeyWidgetBorderColor` | constant | `PDFAnnotation.h` | PdfAnnotationKey::WidgetBorderColor.name() |
+| `PDFAnnotationKeyWidgetCaption` | constant | `PDFAnnotation.h` | PdfAnnotationKey::WidgetCaption.name() |
+| `PDFAnnotationKeyWidgetDefaultValue` | constant | `PDFAnnotation.h` | PdfAnnotationKey::WidgetDefaultValue.name() |
+| `PDFAnnotationKeyWidgetDownCaption` | constant | `PDFAnnotation.h` | PdfAnnotationKey::WidgetDownCaption.name() |
+| `PDFAnnotationKeyWidgetFieldFlags` | constant | `PDFAnnotation.h` | PdfAnnotationKey::WidgetFieldFlags.name() |
+| `PDFAnnotationKeyWidgetFieldType` | constant | `PDFAnnotation.h` | PdfAnnotationKey::WidgetFieldType.name() |
+| `PDFAnnotationKeyWidgetMaxLen` | constant | `PDFAnnotation.h` | PdfAnnotationKey::WidgetMaxLen.name() |
+| `PDFAnnotationKeyWidgetOptions` | constant | `PDFAnnotation.h` | PdfAnnotationKey::WidgetOptions.name() |
+| `PDFAnnotationKeyWidgetRolloverCaption` | constant | `PDFAnnotation.h` | PdfAnnotationKey::WidgetRolloverCaption.name() |
+| `PDFAnnotationKeyWidgetRotation` | constant | `PDFAnnotation.h` | PdfAnnotationKey::WidgetRotation.name() |
+| `PDFAnnotationKeyWidgetTextLabelUI` | constant | `PDFAnnotation.h` | PdfAnnotationKey::WidgetTextLabelUi.name() |
+| `PDFAnnotationKeyWidgetValue` | constant | `PDFAnnotation.h` | PdfAnnotationKey::WidgetValue.name() |
+| `PDFAnnotationHighlightingModeInvert` | constant | `PDFAnnotationUtilities.h` | PdfAnnotationHighlightingMode::Invert.name() |
+| `PDFAnnotationHighlightingModeNone` | constant | `PDFAnnotationUtilities.h` | PdfAnnotationHighlightingMode::None.name() |
+| `PDFAnnotationHighlightingModeOutline` | constant | `PDFAnnotationUtilities.h` | PdfAnnotationHighlightingMode::Outline.name() |
+| `PDFAnnotationHighlightingModePush` | constant | `PDFAnnotationUtilities.h` | PdfAnnotationHighlightingMode::Push.name() |
+| `PDFAnnotationLineEndingStyleCircle` | constant | `PDFAnnotationUtilities.h` | PdfAnnotationLineEndingStyle::Circle.name() |
+| `PDFAnnotationLineEndingStyleClosedArrow` | constant | `PDFAnnotationUtilities.h` | PdfAnnotationLineEndingStyle::ClosedArrow.name() |
+| `PDFAnnotationLineEndingStyleDiamond` | constant | `PDFAnnotationUtilities.h` | PdfAnnotationLineEndingStyle::Diamond.name() |
+| `PDFAnnotationLineEndingStyleNone` | constant | `PDFAnnotationUtilities.h` | PdfAnnotationLineEndingStyle::None.name() |
+| `PDFAnnotationLineEndingStyleOpenArrow` | constant | `PDFAnnotationUtilities.h` | PdfAnnotationLineEndingStyle::OpenArrow.name() |
+| `PDFAnnotationLineEndingStyleSquare` | constant | `PDFAnnotationUtilities.h` | PdfAnnotationLineEndingStyle::Square.name() |
+| `PDFAnnotationSubtypeCircle` | constant | `PDFAnnotationUtilities.h` | PdfAnnotationSubtype::Circle.name() + PdfAnnotation::new_with_subtype |
+| `PDFAnnotationSubtypeFreeText` | constant | `PDFAnnotationUtilities.h` | PdfAnnotationSubtype::FreeText.name() + PdfAnnotation::new_with_subtype |
+| `PDFAnnotationSubtypeHighlight` | constant | `PDFAnnotationUtilities.h` | PdfAnnotationSubtype::Highlight.name() + PdfAnnotation::new_with_subtype |
+| `PDFAnnotationSubtypeInk` | constant | `PDFAnnotationUtilities.h` | PdfAnnotationSubtype::Ink.name() + PdfAnnotation::new_with_subtype |
+| `PDFAnnotationSubtypeLine` | constant | `PDFAnnotationUtilities.h` | PdfAnnotationSubtype::Line.name() + PdfAnnotation::new_with_subtype |
+| `PDFAnnotationSubtypeLink` | constant | `PDFAnnotationUtilities.h` | PdfAnnotationSubtype::Link.name() + PdfAnnotation::new_with_subtype |
+| `PDFAnnotationSubtypePopup` | constant | `PDFAnnotationUtilities.h` | PdfAnnotationSubtype::Popup.name() + PdfAnnotation::new_with_subtype |
+| `PDFAnnotationSubtypeSquare` | constant | `PDFAnnotationUtilities.h` | PdfAnnotationSubtype::Square.name() + PdfAnnotation::new_with_subtype |
+| `PDFAnnotationSubtypeStamp` | constant | `PDFAnnotationUtilities.h` | PdfAnnotationSubtype::Stamp.name() + PdfAnnotation::new_with_subtype |
+| `PDFAnnotationSubtypeStrikeOut` | constant | `PDFAnnotationUtilities.h` | PdfAnnotationSubtype::StrikeOut.name() + PdfAnnotation::new_with_subtype |
+| `PDFAnnotationSubtypeText` | constant | `PDFAnnotationUtilities.h` | PdfAnnotationSubtype::Text.name() + PdfAnnotation::new_with_subtype |
+| `PDFAnnotationSubtypeUnderline` | constant | `PDFAnnotationUtilities.h` | PdfAnnotationSubtype::Underline.name() + PdfAnnotation::new_with_subtype |
+| `PDFAnnotationSubtypeWidget` | constant | `PDFAnnotationUtilities.h` | PdfAnnotationSubtype::Widget.name() + PdfAnnotation::new_with_subtype |
+| `PDFAnnotationTextIconTypeComment` | constant | `PDFAnnotationUtilities.h` | PdfAnnotationTextIconName::Comment.name() |
+| `PDFAnnotationTextIconTypeHelp` | constant | `PDFAnnotationUtilities.h` | PdfAnnotationTextIconName::Help.name() |
+| `PDFAnnotationTextIconTypeInsert` | constant | `PDFAnnotationUtilities.h` | PdfAnnotationTextIconName::Insert.name() |
+| `PDFAnnotationTextIconTypeKey` | constant | `PDFAnnotationUtilities.h` | PdfAnnotationTextIconName::Key.name() |
+| `PDFAnnotationTextIconTypeNewParagraph` | constant | `PDFAnnotationUtilities.h` | PdfAnnotationTextIconName::NewParagraph.name() |
+| `PDFAnnotationTextIconTypeNote` | constant | `PDFAnnotationUtilities.h` | PdfAnnotationTextIconName::Note.name() |
+| `PDFAnnotationTextIconTypeParagraph` | constant | `PDFAnnotationUtilities.h` | PdfAnnotationTextIconName::Paragraph.name() |
+| `PDFAnnotationWidgetSubtypeButton` | constant | `PDFAnnotationUtilities.h` | PdfAnnotationWidgetSubtype::Button.name() |
+| `PDFAnnotationWidgetSubtypeChoice` | constant | `PDFAnnotationUtilities.h` | PdfAnnotationWidgetSubtype::Choice.name() |
+| `PDFAnnotationWidgetSubtypeSignature` | constant | `PDFAnnotationUtilities.h` | PdfAnnotationWidgetSubtype::Signature.name() |
+| `PDFAnnotationWidgetSubtypeText` | constant | `PDFAnnotationUtilities.h` | PdfAnnotationWidgetSubtype::Text.name() |
+| `PDFTextAnnotationIconType` | enum | `PDFAnnotationUtilities.h` | PdfTextAnnotationIconType |
+| `PDFWidgetCellState` | enum | `PDFAnnotationUtilities.h` | PdfWidgetCellState |
+| `kPDFDestinationUnspecifiedValue` | constant | `PDFDestination.h` | PdfDestination::UNSPECIFIED_VALUE |
+| `PDFPrintScalingMode` | enum | `PDFDocument.h` | PdfPrintScalingMode |
+| `PDFSelectionGranularity` | enum | `PDFDocument.h` | PdfSelectionGranularity + PdfDocument::selection_from_page_points_with_granularity |
+| `PDFPageImageInitializationOptionCompressionQuality` | constant | `PDFPage.h` | PdfPageImageInitializationOptions::with_compression_quality + PdfPage::from_image_data |
+| `PDFPageImageInitializationOptionMediaBox` | constant | `PDFPage.h` | PdfPageImageInitializationOptions::with_media_box + PdfPage::from_image_data |
+| `PDFPageImageInitializationOptionRotation` | constant | `PDFPage.h` | PdfPageImageInitializationOptions::with_rotation + PdfPage::from_image_data |
+| `PDFPageImageInitializationOptionUpscaleIfSmaller` | constant | `PDFPage.h` | PdfPageImageInitializationOptions::with_upscale_if_smaller + PdfPage::from_image_data |
+| `PDFAreaOfInterest` | enum | `PDFPage.h` | PdfAreaOfInterest + PdfView::area_of_interest_for_point |
+| `PDFPageOverlayViewProvider` | protocol | `PDFPageOverlayViewProvider.h` | PdfPageOverlayViewProvider::{overlay_view_for_page, will_display_overlay_view, will_end_displaying_overlay_view} + PdfPageOverlayViewProviderHandle::new + PdfView::set_page_overlay_view_provider |
+| `PDFThumbnailLayoutMode` | enum | `PDFThumbnailView.h` | PdfThumbnailLayoutMode |
+| `PDFViewDelegate` | protocol | `PDFView.h` | PdfViewDelegate::{handle_link_click, will_change_scale_factor, print_job_title, perform_print, perform_find, perform_go_to_page, open_pdf_for_remote_goto_action} + PdfViewDelegateHandle::new + PdfView::set_delegate |
 
 ## 🔴 GAPS
-| Symbol | Kind | Header | Notes |
-| --- | --- | --- | --- |
-| `PDFActionResetForm` | interface | `PDFActionResetForm.h` | No Rust wrapper for this action subtype. |
-| `PDFAnnotationKeyAdditionalActions` | constant | `PDFAnnotation.h` | Annotation-dictionary key constant is not surfaced as a Rust constant or dedicated accessor. |
-| `PDFAnnotationKeyAppearanceDictionary` | constant | `PDFAnnotation.h` | Annotation-dictionary key constant is not surfaced as a Rust constant or dedicated accessor. |
-| `PDFAnnotationKeyAppearanceState` | constant | `PDFAnnotation.h` | Annotation-dictionary key constant is not surfaced as a Rust constant or dedicated accessor. |
-| `PDFAnnotationKeyDefaultAppearance` | constant | `PDFAnnotation.h` | Annotation-dictionary key constant is not surfaced as a Rust constant or dedicated accessor. |
-| `PDFAnnotationKeyDestination` | constant | `PDFAnnotation.h` | Annotation-dictionary key constant is not surfaced as a Rust constant or dedicated accessor. |
-| `PDFAnnotationKeyFlags` | constant | `PDFAnnotation.h` | Annotation-dictionary key constant is not surfaced as a Rust constant or dedicated accessor. |
-| `PDFAnnotationKeyHighlightingMode` | constant | `PDFAnnotation.h` | Annotation-dictionary key constant is not surfaced as a Rust constant or dedicated accessor. |
-| `PDFAnnotationKeyIconName` | constant | `PDFAnnotation.h` | Annotation-dictionary key constant is not surfaced as a Rust constant or dedicated accessor. |
-| `PDFAnnotationKeyInklist` | constant | `PDFAnnotation.h` | Annotation-dictionary key constant is not surfaced as a Rust constant or dedicated accessor. |
-| `PDFAnnotationKeyInteriorColor` | constant | `PDFAnnotation.h` | Annotation-dictionary key constant is not surfaced as a Rust constant or dedicated accessor. |
-| `PDFAnnotationKeyLineEndingStyles` | constant | `PDFAnnotation.h` | Annotation-dictionary key constant is not surfaced as a Rust constant or dedicated accessor. |
-| `PDFAnnotationKeyLinePoints` | constant | `PDFAnnotation.h` | Annotation-dictionary key constant is not surfaced as a Rust constant or dedicated accessor. |
-| `PDFAnnotationKeyName` | constant | `PDFAnnotation.h` | Annotation-dictionary key constant is not surfaced as a Rust constant or dedicated accessor. |
-| `PDFAnnotationKeyOpen` | constant | `PDFAnnotation.h` | Annotation-dictionary key constant is not surfaced as a Rust constant or dedicated accessor. |
-| `PDFAnnotationKeyPage` | constant | `PDFAnnotation.h` | Annotation-dictionary key constant is not surfaced as a Rust constant or dedicated accessor. |
-| `PDFAnnotationKeyParent` | constant | `PDFAnnotation.h` | Annotation-dictionary key constant is not surfaced as a Rust constant or dedicated accessor. |
-| `PDFAnnotationKeyPopup` | constant | `PDFAnnotation.h` | Annotation-dictionary key constant is not surfaced as a Rust constant or dedicated accessor. |
-| `PDFAnnotationKeyQuadPoints` | constant | `PDFAnnotation.h` | Annotation-dictionary key constant is not surfaced as a Rust constant or dedicated accessor. |
-| `PDFAnnotationKeyQuadding` | constant | `PDFAnnotation.h` | Annotation-dictionary key constant is not surfaced as a Rust constant or dedicated accessor. |
-| `PDFAnnotationKeyTextLabel` | constant | `PDFAnnotation.h` | Annotation-dictionary key constant is not surfaced as a Rust constant or dedicated accessor. |
-| `PDFAnnotationKeyWidgetAppearanceDictionary` | constant | `PDFAnnotation.h` | Widget annotation-dictionary key is not exposed through the safe Rust API. |
-| `PDFAnnotationKeyWidgetBackgroundColor` | constant | `PDFAnnotation.h` | Widget annotation-dictionary key is not exposed through the safe Rust API. |
-| `PDFAnnotationKeyWidgetBorderColor` | constant | `PDFAnnotation.h` | Widget annotation-dictionary key is not exposed through the safe Rust API. |
-| `PDFAnnotationKeyWidgetCaption` | constant | `PDFAnnotation.h` | Widget annotation-dictionary key is not exposed through the safe Rust API. |
-| `PDFAnnotationKeyWidgetDefaultValue` | constant | `PDFAnnotation.h` | Widget annotation-dictionary key is not exposed through the safe Rust API. |
-| `PDFAnnotationKeyWidgetDownCaption` | constant | `PDFAnnotation.h` | Widget annotation-dictionary key is not exposed through the safe Rust API. |
-| `PDFAnnotationKeyWidgetFieldFlags` | constant | `PDFAnnotation.h` | Widget annotation-dictionary key is not exposed through the safe Rust API. |
-| `PDFAnnotationKeyWidgetFieldType` | constant | `PDFAnnotation.h` | Widget annotation-dictionary key is not exposed through the safe Rust API. |
-| `PDFAnnotationKeyWidgetMaxLen` | constant | `PDFAnnotation.h` | Widget annotation-dictionary key is not exposed through the safe Rust API. |
-| `PDFAnnotationKeyWidgetOptions` | constant | `PDFAnnotation.h` | Widget annotation-dictionary key is not exposed through the safe Rust API. |
-| `PDFAnnotationKeyWidgetRolloverCaption` | constant | `PDFAnnotation.h` | Widget annotation-dictionary key is not exposed through the safe Rust API. |
-| `PDFAnnotationKeyWidgetRotation` | constant | `PDFAnnotation.h` | Widget annotation-dictionary key is not exposed through the safe Rust API. |
-| `PDFAnnotationKeyWidgetTextLabelUI` | constant | `PDFAnnotation.h` | Widget annotation-dictionary key is not exposed through the safe Rust API. |
-| `PDFAnnotationKeyWidgetValue` | constant | `PDFAnnotation.h` | Widget annotation-dictionary key is not exposed through the safe Rust API. |
-| `PDFAnnotationHighlightingModeInvert` | constant | `PDFAnnotationUtilities.h` | Highlighting-mode string constant is not exposed. |
-| `PDFAnnotationHighlightingModeNone` | constant | `PDFAnnotationUtilities.h` | Highlighting-mode string constant is not exposed. |
-| `PDFAnnotationHighlightingModeOutline` | constant | `PDFAnnotationUtilities.h` | Highlighting-mode string constant is not exposed. |
-| `PDFAnnotationHighlightingModePush` | constant | `PDFAnnotationUtilities.h` | Highlighting-mode string constant is not exposed. |
-| `PDFAnnotationLineEndingStyleCircle` | constant | `PDFAnnotationUtilities.h` | Line-ending string constant is not exposed. |
-| `PDFAnnotationLineEndingStyleClosedArrow` | constant | `PDFAnnotationUtilities.h` | Line-ending string constant is not exposed. |
-| `PDFAnnotationLineEndingStyleDiamond` | constant | `PDFAnnotationUtilities.h` | Line-ending string constant is not exposed. |
-| `PDFAnnotationLineEndingStyleNone` | constant | `PDFAnnotationUtilities.h` | Line-ending string constant is not exposed. |
-| `PDFAnnotationLineEndingStyleOpenArrow` | constant | `PDFAnnotationUtilities.h` | Line-ending string constant is not exposed. |
-| `PDFAnnotationLineEndingStyleSquare` | constant | `PDFAnnotationUtilities.h` | Line-ending string constant is not exposed. |
-| `PDFAnnotationSubtypeCircle` | constant | `PDFAnnotationUtilities.h` | Subtype string constant is not exposed; PdfAnnotation::new accepts raw subtype strings only. |
-| `PDFAnnotationSubtypeFreeText` | constant | `PDFAnnotationUtilities.h` | Subtype string constant is not exposed; PdfAnnotation::new accepts raw subtype strings only. |
-| `PDFAnnotationSubtypeHighlight` | constant | `PDFAnnotationUtilities.h` | Subtype string constant is not exposed; PdfAnnotation::new accepts raw subtype strings only. |
-| `PDFAnnotationSubtypeInk` | constant | `PDFAnnotationUtilities.h` | Subtype string constant is not exposed; PdfAnnotation::new accepts raw subtype strings only. |
-| `PDFAnnotationSubtypeLine` | constant | `PDFAnnotationUtilities.h` | Subtype string constant is not exposed; PdfAnnotation::new accepts raw subtype strings only. |
-| `PDFAnnotationSubtypeLink` | constant | `PDFAnnotationUtilities.h` | Subtype string constant is not exposed; PdfAnnotation::new accepts raw subtype strings only. |
-| `PDFAnnotationSubtypePopup` | constant | `PDFAnnotationUtilities.h` | Subtype string constant is not exposed; PdfAnnotation::new accepts raw subtype strings only. |
-| `PDFAnnotationSubtypeSquare` | constant | `PDFAnnotationUtilities.h` | Subtype string constant is not exposed; PdfAnnotation::new accepts raw subtype strings only. |
-| `PDFAnnotationSubtypeStamp` | constant | `PDFAnnotationUtilities.h` | Subtype string constant is not exposed; PdfAnnotation::new accepts raw subtype strings only. |
-| `PDFAnnotationSubtypeStrikeOut` | constant | `PDFAnnotationUtilities.h` | Subtype string constant is not exposed; PdfAnnotation::new accepts raw subtype strings only. |
-| `PDFAnnotationSubtypeText` | constant | `PDFAnnotationUtilities.h` | Subtype string constant is not exposed; PdfAnnotation::new accepts raw subtype strings only. |
-| `PDFAnnotationSubtypeUnderline` | constant | `PDFAnnotationUtilities.h` | Subtype string constant is not exposed; PdfAnnotation::new accepts raw subtype strings only. |
-| `PDFAnnotationSubtypeWidget` | constant | `PDFAnnotationUtilities.h` | Subtype string constant is not exposed; PdfAnnotation::new accepts raw subtype strings only. |
-| `PDFAnnotationTextIconTypeComment` | constant | `PDFAnnotationUtilities.h` | Text-icon string constant is not exposed. |
-| `PDFAnnotationTextIconTypeHelp` | constant | `PDFAnnotationUtilities.h` | Text-icon string constant is not exposed. |
-| `PDFAnnotationTextIconTypeInsert` | constant | `PDFAnnotationUtilities.h` | Text-icon string constant is not exposed. |
-| `PDFAnnotationTextIconTypeKey` | constant | `PDFAnnotationUtilities.h` | Text-icon string constant is not exposed. |
-| `PDFAnnotationTextIconTypeNewParagraph` | constant | `PDFAnnotationUtilities.h` | Text-icon string constant is not exposed. |
-| `PDFAnnotationTextIconTypeNote` | constant | `PDFAnnotationUtilities.h` | Text-icon string constant is not exposed. |
-| `PDFAnnotationTextIconTypeParagraph` | constant | `PDFAnnotationUtilities.h` | Text-icon string constant is not exposed. |
-| `PDFAnnotationWidgetSubtypeButton` | constant | `PDFAnnotationUtilities.h` | Widget-subtype string constant is not exposed. |
-| `PDFAnnotationWidgetSubtypeChoice` | constant | `PDFAnnotationUtilities.h` | Widget-subtype string constant is not exposed. |
-| `PDFAnnotationWidgetSubtypeSignature` | constant | `PDFAnnotationUtilities.h` | Widget-subtype string constant is not exposed. |
-| `PDFAnnotationWidgetSubtypeText` | constant | `PDFAnnotationUtilities.h` | Widget-subtype string constant is not exposed. |
-| `PDFTextAnnotationIconType` | enum | `PDFAnnotationUtilities.h` | Annotation-utility enum is not exposed as a Rust type. |
-| `PDFWidgetCellState` | enum | `PDFAnnotationUtilities.h` | Annotation-utility enum is not exposed as a Rust type. |
-| `kPDFDestinationUnspecifiedValue` | constant | `PDFDestination.h` | Destination zoom sentinel constant is not surfaced. |
-| `PDFPrintScalingMode` | enum | `PDFDocument.h` | Printing APIs are not wrapped. |
-| `PDFSelectionGranularity` | enum | `PDFDocument.h` | Search/find APIs that use selection granularity are not wrapped. |
-| `PDFPageImageInitializationOptionCompressionQuality` | constant | `PDFPage.h` | Image-to-page initialization options are not wrapped. |
-| `PDFPageImageInitializationOptionMediaBox` | constant | `PDFPage.h` | Image-to-page initialization options are not wrapped. |
-| `PDFPageImageInitializationOptionRotation` | constant | `PDFPage.h` | Image-to-page initialization options are not wrapped. |
-| `PDFPageImageInitializationOptionUpscaleIfSmaller` | constant | `PDFPage.h` | Image-to-page initialization options are not wrapped. |
-| `PDFAreaOfInterest` | enum | `PDFPage.h` | Area-of-interest hit-testing APIs are not wrapped. |
-| `PDFPageOverlayViewProvider` | protocol | `PDFPageOverlayViewProvider.h` | No delegate/protocol bridging in the Swift bridge or public Rust API. |
-| `PDFThumbnailLayoutMode` | enum | `PDFThumbnailView.h` | Thumbnail layout-mode APIs are not wrapped. |
-| `PDFViewDelegate` | protocol | `PDFView.h` | No delegate/protocol bridging in the Swift bridge or public Rust API. |
+None.
 
 ## ⏭️ EXEMPT
 | Symbol | Kind | Header | Reason | SDK attribute |

@@ -2,17 +2,16 @@
 
 Safe Rust bindings for Apple's [PDFKit](https://developer.apple.com/documentation/pdfkit) framework on macOS. The published Cargo package is `pdfkit-rs`; the Rust library target is `pdfkit`.
 
-> **Status:** v0.2.1 extends the Swift bridge and safe Rust API with generic `PdfAction` handles, named and remote-go-to actions, `PDFDocumentDelegate` bridging, structured document write options, notification-name enums, and raw annotation utility enums on top of the v0.2.0 document/view surface.
+> **Status:** v0.2.2 closes the remaining public PDFKit audit gaps with `PdfActionResetForm`, typed annotation key/subtype/icon constants, selection granularity and page-image initialization options, `PdfViewDelegate`, `PdfPageOverlayViewProvider`, and 100% coverage of the non-deprecated top-level SDK declarations counted by `COVERAGE_AUDIT.md`.
 
 ## Highlights
 
-- `PdfDocument` for loading, creating, mutating, saving, attaching delegates, and option-driven writes
-- `PdfPage` for bounds, text, character geometry, annotations, and selections
-- `PdfAction`, `PdfActionUrl`, `PdfActionGoTo`, `PdfActionNamed`, and `PdfActionRemoteGoTo` for abstract and concrete action inspection/editing
-- `PdfAnnotation`, `PdfOutline`, `PdfBorder`, and `PdfDestination` for generic action attachment, outline trees, and navigation targets
-- `PdfDocumentDelegate`, `PdfDocumentWriteOptions`, `PdfDocumentNotification`, `PdfViewNotification`, and `PdfThumbnailViewNotification` for delegate-driven integration points and structured notification names
-- `PdfAppearanceCharacteristics`, `PdfActionNamedName`, `PdfLineStyle`, and `PdfMarkupType` for widget and annotation utility metadata
-- `PdfAccessibilityNode::public_api_available()` for reporting that PDFKit only forward-declares the type on macOS
+- `PdfDocument` for loading, creating, mutating, saving, attaching delegates, option-driven writes, and granularity-aware selections
+- `PdfPage` for bounds, text, character geometry, annotations, selections, and image-backed page creation
+- `PdfAction`, `PdfActionResetForm`, `PdfActionUrl`, `PdfActionGoTo`, `PdfActionNamed`, and `PdfActionRemoteGoTo` for abstract and concrete action inspection/editing
+- `PdfAnnotation`, `PdfOutline`, `PdfBorder`, `PdfDestination`, and typed annotation key/subtype/icon wrappers for navigation and form metadata
+- `PdfDocumentDelegate`, `PdfViewDelegate`, `PdfPageOverlayViewProvider`, `PdfDocumentWriteOptions`, and structured `PDFDocument` / `PDFView` / `PDFThumbnailView` notification names
+- `PdfAppearanceCharacteristics`, `PdfPrintScalingMode`, `PdfTextAnnotationIconType`, `PdfThumbnailLayoutMode`, `PdfWidgetCellState`, and `PdfAccessibilityNode::public_api_available()`
 
 ## Quick start
 
@@ -40,41 +39,45 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 
 - `PdfDocument::new`, `from_url`, `from_bytes`, `write_to_url`, `write_to_url_with_options`
 - `PdfDocument::insert_page`, `remove_page`, `exchange_pages`, `set_outline_root`, `set_delegate`, `unlock`
-- `PdfDocument::selection_for_entire_document`, `selection_from_page_points`, `selection_from_page_characters`
-- `PdfPage::new`, `bounds`, `set_bounds`, `rotation`, `set_rotation`
+- `PdfDocument::selection_for_entire_document`, `selection_from_page_points`, `selection_from_page_points_with_granularity`, `selection_from_page_characters`
+- `PdfPage::new`, `from_image_data`, `bounds`, `set_bounds`, `rotation`, `set_rotation`
+- `PdfPageImageInitializationOptions::{new, with_media_box, with_rotation, with_upscale_if_smaller, with_compression_quality}`
 - `PdfPage::selection_for_range`, `selection_for_rect`, `selection_for_word_at_point`, `selection_for_line_at_point`
 - `PdfSelection::new`, `text_range`, `selections_by_line`, `add_selection`
 
 ### Actions, outlines, and annotations
 
-- `PdfAction::action_type`, `as_url`, `as_goto`, `as_named`, `as_remote_goto`
+- `PdfAction::action_type`, `as_url`, `as_goto`, `as_named`, `as_remote_goto`, `as_reset_form`
+- `PdfActionResetForm::new`, `fields`, `set_fields`, `clear_fields`, `fields_included_are_cleared`, `set_fields_included_are_cleared`, `action_type`
 - `PdfActionUrl::new`, `url`, `set_url`, `action_type`
 - `PdfActionGoTo::new`, `destination`, `set_destination`, `action_type`
 - `PdfActionNamed::new`, `name`, `set_name`, `action_type`
 - `PdfActionRemoteGoTo::new`, `page_index`, `set_page_index`, `point`, `set_point`, `url`, `set_url`, `action_type`
 - `PdfOutline::new`, `insert_child`, `set_label`, `set_destination`, `action`, `set_action`, `clear_action`
-- `PdfAnnotation::new`, `info`, `set_contents`, `set_border`, `action`, `set_action`, `clear_action`
+- `PdfAnnotation::new`, `new_with_subtype`, `info`, `set_contents`, `set_border`, `action`, `set_action`, `clear_action`
+- `PdfAnnotationKey`, `PdfAnnotationHighlightingMode`, `PdfAnnotationLineEndingStyle`, `PdfAnnotationSubtype`, `PdfAnnotationTextIconName`, `PdfAnnotationWidgetSubtype`
 - `PdfBorder::new`, `info`, `set_style`, `set_line_width`, `set_dash_pattern`
 - `PdfDestination::new`, `info`, `page`, `set_zoom`, `compare`
 
 ### Delegates, notifications, and utilities
 
-- `PdfDocumentDelegate`, `PdfDocumentDelegateHandle`
+- `PdfDocumentDelegate`, `PdfDocumentDelegateHandle`, `PdfViewDelegate`, `PdfViewDelegateHandle`
+- `PdfPageOverlayViewProvider`, `PdfPageOverlayViewProviderHandle`, `PdfPageOverlayView`
 - `PdfDocumentWriteOptions::{with_owner_password, with_user_password, with_access_permissions, with_burn_in_annotations, with_save_text_from_ocr, with_save_images_as_jpeg, with_optimize_images_for_screen}`
 - `PdfDocumentNotification`, `PdfDocumentNotificationUserInfoKey`, `PdfViewNotification`, `PdfThumbnailViewNotification`
-- `PdfActionNamedName`, `PdfLineStyle`, `PdfMarkupType`
+- `PdfActionNamedName`, `PdfLineStyle`, `PdfMarkupType`, `PdfPrintScalingMode`, `PdfSelectionGranularity`, `PdfTextAnnotationIconType`, `PdfThumbnailLayoutMode`, `PdfWidgetCellState`
 
 ### View state, widget appearance, and accessibility status
 
-- `PdfView::new`, `set_document`, `set_display_mode`, `set_display_direction`, `set_display_box`
-- `PdfView::set_current_selection`, `go_to_page`, `go_to_destination`, `visible_pages`
+- `PdfView::new`, `set_document`, `set_delegate`, `set_page_overlay_view_provider`, `set_display_mode`, `set_display_direction`, `set_display_box`
+- `PdfView::set_current_selection`, `go_to_page`, `go_to_destination`, `visible_pages`, `area_of_interest_for_point`
 - `PdfThumbnailView::new`, `set_pdf_view`, `set_thumbnail_size`, `set_maximum_number_of_columns`
 - `PdfAppearanceCharacteristics::new`, `set_control_type`, `set_caption`, `set_background_color`, `info`
-- `PdfAccessibilityNode::public_api_available`, `PdfAccessibilityNode::availability_note`
+- `PdfAreaOfInterest`, `PdfDestination::UNSPECIFIED_VALUE`, `PdfAccessibilityNode::public_api_available`, `PdfAccessibilityNode::availability_note`
 
 ## Examples
 
-The crate now ships one smoke example per logical area:
+The crate now ships smoke examples covering the core logical areas:
 
 - `01_document_smoke`
 - `02_page_basics`
@@ -106,7 +109,7 @@ for ex in examples/*.rs; do cargo run --example "$(basename "$ex" .rs)"; done
 
 ## Coverage audit
 
-See [`COVERAGE.md`](COVERAGE.md) for the v0.2.1 header audit and deferred/skipped items.
+See [`COVERAGE.md`](COVERAGE.md) for the v0.2.2 header audit and [`COVERAGE_AUDIT.md`](COVERAGE_AUDIT.md) for the symbol-level 100% audit report.
 
 ## License
 

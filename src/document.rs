@@ -8,7 +8,10 @@ use crate::handle::ObjectHandle;
 use crate::outline::PdfOutline;
 use crate::page::PdfPage;
 use crate::selection::PdfSelection;
-use crate::types::{PdfDocumentAttributes, PdfDocumentInfo, PdfDocumentWriteOptions, PdfPoint};
+use crate::types::{
+    PdfDocumentAttributes, PdfDocumentInfo, PdfDocumentWriteOptions, PdfPoint,
+    PdfSelectionGranularity,
+};
 use crate::util::{c_string, parse_json, path_to_c_string, required_handle, take_string};
 
 #[derive(Debug, Clone)]
@@ -159,6 +162,30 @@ impl PdfDocument {
                 end_page.as_handle_ptr(),
                 end_point.x,
                 end_point.y,
+            )
+        };
+        unsafe { ObjectHandle::from_retained_ptr(ptr) }.map(PdfSelection::from_handle)
+    }
+
+    #[must_use]
+    pub fn selection_from_page_points_with_granularity(
+        &self,
+        start_page: &PdfPage,
+        start_point: PdfPoint,
+        end_page: &PdfPage,
+        end_point: PdfPoint,
+        granularity: PdfSelectionGranularity,
+    ) -> Option<PdfSelection> {
+        let ptr = unsafe {
+            ffi::pdf_document_selection_from_pages_points_with_granularity(
+                self.handle.as_ptr(),
+                start_page.as_handle_ptr(),
+                start_point.x,
+                start_point.y,
+                end_page.as_handle_ptr(),
+                end_point.x,
+                end_point.y,
+                granularity.as_raw(),
             )
         };
         unsafe { ObjectHandle::from_retained_ptr(ptr) }.map(PdfSelection::from_handle)

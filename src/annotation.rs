@@ -3,6 +3,7 @@ use std::ptr;
 use crate::action::{PdfAction, PdfActionLike};
 use crate::action_goto::PdfActionGoTo;
 use crate::action_url::PdfActionUrl;
+use crate::annotation_constants::PdfAnnotationSubtype;
 use crate::border::PdfBorder;
 use crate::error::Result;
 use crate::ffi;
@@ -22,6 +23,28 @@ impl PdfAnnotation {
 
     pub fn new(bounds: PdfRect, annotation_type: &str) -> Result<Self> {
         let annotation_type = c_string(annotation_type)?;
+        let mut out_annotation = ptr::null_mut();
+        let mut out_error = ptr::null_mut();
+        let status = unsafe {
+            ffi::pdf_annotation_new(
+                bounds.x,
+                bounds.y,
+                bounds.width,
+                bounds.height,
+                annotation_type.as_ptr(),
+                &mut out_annotation,
+                &mut out_error,
+            )
+        };
+        crate::util::status_result(status, out_error)?;
+        Ok(Self::from_handle(crate::util::required_handle(
+            out_annotation,
+            "PDFAnnotation",
+        )?))
+    }
+
+    pub fn new_with_subtype(bounds: PdfRect, annotation_subtype: PdfAnnotationSubtype) -> Result<Self> {
+        let annotation_type = c_string(annotation_subtype.name())?;
         let mut out_annotation = ptr::null_mut();
         let mut out_error = ptr::null_mut();
         let status = unsafe {

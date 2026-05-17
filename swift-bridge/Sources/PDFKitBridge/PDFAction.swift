@@ -38,3 +38,11 @@ public func pdf_action_as_remote_goto(_ handle: UnsafeMutableRawPointer?) -> Uns
     }
     return pdf_retain_action_remote_goto(typed)
 }
+
+@_cdecl("pdf_action_as_reset_form")
+public func pdf_action_as_reset_form(_ handle: UnsafeMutableRawPointer?) -> UnsafeMutableRawPointer? {
+    guard let action = pdf_action_value(handle), let typed = action as? PDFActionResetForm else {
+        return nil
+    }
+    return pdf_retain_action_reset_form(typed)
+}

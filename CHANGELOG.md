@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.2.2] - 2026-05-17
+
+### Added
+
+- Added `PdfActionResetForm` plus `PdfAction::as_reset_form` for form-reset action inspection and editing.
+- Added typed wrappers for the remaining public annotation constants and enums, including `PdfAnnotationKey`, `PdfAnnotationHighlightingMode`, `PdfAnnotationLineEndingStyle`, `PdfAnnotationSubtype`, `PdfAnnotationTextIconName`, `PdfAnnotationWidgetSubtype`, `PdfTextAnnotationIconType`, `PdfWidgetCellState`, `PdfPrintScalingMode`, `PdfSelectionGranularity`, `PdfThumbnailLayoutMode`, and `PdfDestination::UNSPECIFIED_VALUE`.
+- Added `PdfPage::from_image_data` with `PdfPageImageInitializationOptions`, plus `PdfViewDelegate`, `PdfPageOverlayView`, `PdfPageOverlayViewProvider`, and `PdfView::area_of_interest_for_point`.
+
+### Changed
+
+- Refreshed the README and coverage audits to report 100% coverage of the non-deprecated top-level PDFKit SDK declarations counted by the audit.
+
 ## [0.2.1] - 2026-05-16
 
 ### Added

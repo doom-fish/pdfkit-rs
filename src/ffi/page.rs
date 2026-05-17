@@ -4,6 +4,13 @@ use core::ffi::{c_char, c_void};
 
 unsafe extern "C" {
     pub fn pdf_page_new(out_page: *mut *mut c_void, out_error_message: *mut *mut c_char) -> i32;
+    pub fn pdf_page_new_with_image_data(
+        image_data_ptr: *const u8,
+        image_data_len: usize,
+        options_json: *const c_char,
+        out_page: *mut *mut c_void,
+        out_error_message: *mut *mut c_char,
+    ) -> i32;
     pub fn pdf_page_label_string(handle: *mut c_void) -> *mut c_char;
     pub fn pdf_page_string(handle: *mut c_void) -> *mut c_char;
     pub fn pdf_page_number_of_characters(handle: *mut c_void) -> u64;

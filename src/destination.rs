@@ -14,6 +14,8 @@ pub struct PdfDestination {
 }
 
 impl PdfDestination {
+    pub const UNSPECIFIED_VALUE: f64 = 3.402_823_466_385_288_6e38;
+
     pub(crate) fn from_handle(handle: ObjectHandle) -> Self {
         Self { handle }
     }
