@@ -24,12 +24,21 @@ pub(crate) fn path_to_c_string(path: &Path) -> Result<CString> {
     c_string(path.to_string_lossy().as_ref())
 }
 
+/// Takes ownership of a C string allocated by the Swift bridge and converts it to a Rust String,
+/// then frees the original C string.
+///
+/// # Safety
+/// `ptr` must be either null or a valid, non-null pointer to a null-terminated C string allocated
+/// by the Swift bridge using `malloc` or compatible allocator. The pointer must not be used after
+/// this function returns as the memory is freed.
 pub(crate) fn take_string(ptr: *mut c_char) -> Option<String> {
     if ptr.is_null() {
         return None;
     }
 
+    // SAFETY: ptr is checked for null; caller guarantees valid C string from Swift
     let string = unsafe { CStr::from_ptr(ptr).to_string_lossy().into_owned() };
+    // SAFETY: ptr is guaranteed to be allocated by Swift bridge using malloc
     unsafe { libc::free(ptr.cast::<c_void>()) };
     Some(string)
 }
@@ -47,6 +56,7 @@ pub(crate) fn required_handle(
     ptr: *mut c_void,
     context: &'static str,
 ) -> Result<crate::handle::ObjectHandle> {
+    // SAFETY: ptr is either null (checked below) or a retained PDFKit object pointer from the Swift bridge
     unsafe { crate::handle::ObjectHandle::from_retained_ptr(ptr) }.ok_or_else(|| {
         PdfKitError::new(ffi::status::NULL_RESULT, format!("{context} returned null"))
     })

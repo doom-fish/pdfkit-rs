@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.2.3] - 2026-05-17
+
+### Changed
+
+- Added comprehensive SAFETY comments to all unsafe FFI boundary crossing code and callback trampolines in `handle.rs`, `util.rs`, `document_delegate.rs`, `view_delegate.rs`, and `page_overlay_view_provider.rs`. These comments document the safety requirements for pointer validity, memory ownership, and panic safety across C/Swift FFI boundaries.
+
 ## [0.2.2] - 2026-05-17
 
 ### Added

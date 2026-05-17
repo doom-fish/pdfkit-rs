@@ -102,24 +102,43 @@ fn duplicate_string(value: Option<String>) -> *mut c_char {
         })
 }
 
+/// # Safety
+/// The caller must ensure that `context` is either null or a valid pointer to `DelegateState`
+/// that was obtained from `Box::into_raw()` and has not yet been freed.
 unsafe fn delegate_state(context: *mut c_void) -> Option<&'static mut DelegateState> {
     context.cast::<DelegateState>().as_mut()
 }
 
+/// Helper to convert a retained PDFView pointer to a PdfView.
+///
+/// # Safety
+/// `handle` must be either null or a valid, retained pointer to a PDFView object from Swift.
 unsafe fn retained_view(handle: *mut c_void) -> Option<PdfView> {
+    // SAFETY: caller guarantees valid handle or null
     unsafe { ObjectHandle::from_retained_ptr(handle) }.map(PdfView::from_handle)
 }
 
+/// Helper to convert a retained PDFActionRemoteGoTo pointer to a PdfActionRemoteGoTo.
+///
+/// # Safety
+/// `handle` must be either null or a valid, retained pointer to a PDFActionRemoteGoTo object from Swift.
 unsafe fn retained_remote_goto_action(handle: *mut c_void) -> Option<PdfActionRemoteGoTo> {
+    // SAFETY: caller guarantees valid handle or null
     unsafe { ObjectHandle::from_retained_ptr(handle) }.map(PdfActionRemoteGoTo::from_handle)
 }
 
+/// # Safety
+/// This is an extern "C" callback invoked by Swift. The caller must pass a valid, non-null
+/// `context` pointer that points to `DelegateState`, and `view_handle` must be a retained
+/// PDFView pointer from Swift (or null). The caller must pass a valid C string for `url`
+/// (or null). Panics are caught to prevent unwinding across the FFI boundary.
 unsafe extern "C" fn pdf_view_delegate_link_click_trampoline(
     context: *mut c_void,
     view_handle: *mut c_void,
     url: *const c_char,
 ) -> i32 {
     catch_unwind(AssertUnwindSafe(|| {
+        // SAFETY: caller is responsible for providing valid context and view_handle pointers
         let Some(state) = (unsafe { delegate_state(context) }) else {
             return 0;
         };
@@ -127,7 +146,10 @@ unsafe extern "C" fn pdf_view_delegate_link_click_trampoline(
             return 0;
         };
         let Some(url) =
-            (!url.is_null()).then(|| unsafe { CStr::from_ptr(url).to_string_lossy().into_owned() })
+            (!url.is_null()).then(|| unsafe {
+                // SAFETY: checked for null; Swift guarantees valid C string
+                CStr::from_ptr(url).to_string_lossy().into_owned()
+            })
         else {
             return 0;
         };
@@ -136,12 +158,18 @@ unsafe extern "C" fn pdf_view_delegate_link_click_trampoline(
     .unwrap_or(0)
 }
 
+/// # Safety
+/// This is an extern "C" callback invoked by Swift. The caller must pass a valid, non-null
+/// `context` pointer that points to `DelegateState`, and `view_handle` must be a retained
+/// PDFView pointer from Swift (or null). Panics are caught to prevent unwinding across the
+/// FFI boundary.
 unsafe extern "C" fn pdf_view_delegate_scale_factor_trampoline(
     context: *mut c_void,
     view_handle: *mut c_void,
     scale_factor: f64,
 ) -> f64 {
     catch_unwind(AssertUnwindSafe(|| {
+        // SAFETY: caller is responsible for providing valid context and view_handle pointers
         let Some(state) = (unsafe { delegate_state(context) }) else {
             return scale_factor.clamp(0.1, 10.0);
         };

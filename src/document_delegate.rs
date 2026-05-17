@@ -79,15 +79,23 @@ fn duplicate_string(value: Option<String>) -> *mut c_char {
         })
 }
 
+/// # Safety
+/// The caller must ensure that `context` is either null or a valid pointer to `DelegateState`
+/// that was obtained from `Box::into_raw()` and has not yet been freed.
 unsafe fn delegate_state(context: *mut c_void) -> Option<&'static mut DelegateState> {
     context.cast::<DelegateState>().as_mut()
 }
 
+/// # Safety
+/// This is an extern "C" callback invoked by Swift. The caller must pass a valid, non-null
+/// `context` pointer that points to `DelegateState`. Panics are caught to prevent unwinding
+/// across the FFI boundary.
 unsafe extern "C" fn pdf_document_delegate_notification_trampoline(
     context: *mut c_void,
     raw_notification: i32,
 ) {
     let _ = catch_unwind(AssertUnwindSafe(|| {
+        // SAFETY: caller is responsible for providing valid context pointer
         let Some(state) = (unsafe { delegate_state(context) }) else {
             return;
         };
@@ -98,11 +106,17 @@ unsafe extern "C" fn pdf_document_delegate_notification_trampoline(
     }));
 }
 
+/// # Safety
+/// This is an extern "C" callback invoked by Swift. The caller must pass a valid, non-null
+/// `context` pointer that points to `DelegateState`, and `selection_handle` must be a
+/// retained PDFSelection pointer from Swift (or null). Panics are caught to prevent unwinding
+/// across the FFI boundary.
 unsafe extern "C" fn pdf_document_delegate_match_trampoline(
     context: *mut c_void,
     selection_handle: *mut c_void,
 ) {
     let _ = catch_unwind(AssertUnwindSafe(|| {
+        // SAFETY: caller is responsible for providing valid context and selection_handle pointers
         let Some(state) = (unsafe { delegate_state(context) }) else {
             return;
         };
@@ -115,10 +129,15 @@ unsafe extern "C" fn pdf_document_delegate_match_trampoline(
     }));
 }
 
+/// # Safety
+/// This is an extern "C" callback invoked by Swift. The caller must pass a valid, non-null
+/// `context` pointer that points to `DelegateState`. The returned pointer must be freed by
+/// the Swift caller. Panics are caught to prevent unwinding across the FFI boundary.
 unsafe extern "C" fn pdf_document_delegate_page_class_name_trampoline(
     context: *mut c_void,
 ) -> *mut c_char {
     catch_unwind(AssertUnwindSafe(|| {
+        // SAFETY: caller is responsible for providing valid context pointer
         let Some(state) = (unsafe { delegate_state(context) }) else {
             return ptr::null_mut();
         };
@@ -127,15 +146,22 @@ unsafe extern "C" fn pdf_document_delegate_page_class_name_trampoline(
     .unwrap_or(ptr::null_mut())
 }
 
+/// # Safety
+/// This is an extern "C" callback invoked by Swift. The caller must pass a valid, non-null
+/// `context` pointer that points to `DelegateState`, and `annotation_type` must be either
+/// null or a valid C string pointer. The returned pointer must be freed by the Swift caller.
+/// Panics are caught to prevent unwinding across the FFI boundary.
 unsafe extern "C" fn pdf_document_delegate_annotation_class_name_trampoline(
     context: *mut c_void,
     annotation_type: *const c_char,
 ) -> *mut c_char {
     catch_unwind(AssertUnwindSafe(|| {
+        // SAFETY: caller is responsible for providing valid context and annotation_type pointers
         let Some(state) = (unsafe { delegate_state(context) }) else {
             return ptr::null_mut();
         };
         let Some(annotation_type) = (!annotation_type.is_null()).then(|| unsafe {
+            // SAFETY: checked for null above; Swift guarantees valid C string
             CStr::from_ptr(annotation_type)
                 .to_string_lossy()
                 .into_owned()
