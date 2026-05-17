@@ -15,8 +15,14 @@ unsafe extern "C" {
     ) -> i32;
     pub fn pdf_appearance_characteristics_set_rotation(handle: *mut c_void, value: i32);
     pub fn pdf_appearance_characteristics_set_caption(handle: *mut c_void, value: *const c_char);
-    pub fn pdf_appearance_characteristics_set_rollover_caption(handle: *mut c_void, value: *const c_char);
-    pub fn pdf_appearance_characteristics_set_down_caption(handle: *mut c_void, value: *const c_char);
+    pub fn pdf_appearance_characteristics_set_rollover_caption(
+        handle: *mut c_void,
+        value: *const c_char,
+    );
+    pub fn pdf_appearance_characteristics_set_down_caption(
+        handle: *mut c_void,
+        value: *const c_char,
+    );
     pub fn pdf_appearance_characteristics_set_background_color(
         handle: *mut c_void,
         red: f64,

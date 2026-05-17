@@ -57,20 +57,36 @@ impl PdfThumbnailView {
     }
 
     pub fn set_thumbnail_size(&self, size: PdfSize) {
-        unsafe { ffi::pdf_thumbnail_view_set_thumbnail_size(self.handle.as_ptr(), size.width, size.height) };
+        unsafe {
+            ffi::pdf_thumbnail_view_set_thumbnail_size(
+                self.handle.as_ptr(),
+                size.width,
+                size.height,
+            )
+        };
     }
 
     pub fn set_maximum_number_of_columns(&self, value: usize) {
-        unsafe { ffi::pdf_thumbnail_view_set_maximum_number_of_columns(self.handle.as_ptr(), value as u64) };
+        unsafe {
+            ffi::pdf_thumbnail_view_set_maximum_number_of_columns(
+                self.handle.as_ptr(),
+                value as u64,
+            )
+        };
     }
 
     pub fn set_allows_dragging(&self, value: bool) {
-        unsafe { ffi::pdf_thumbnail_view_set_allows_dragging(self.handle.as_ptr(), i32::from(value)) };
+        unsafe {
+            ffi::pdf_thumbnail_view_set_allows_dragging(self.handle.as_ptr(), i32::from(value))
+        };
     }
 
     pub fn set_allows_multiple_selection(&self, value: bool) {
         unsafe {
-            ffi::pdf_thumbnail_view_set_allows_multiple_selection(self.handle.as_ptr(), i32::from(value));
+            ffi::pdf_thumbnail_view_set_allows_multiple_selection(
+                self.handle.as_ptr(),
+                i32::from(value),
+            );
         };
     }
 
@@ -81,7 +97,8 @@ impl PdfThumbnailView {
 
     #[must_use]
     pub fn selected_page(&self, index: usize) -> Option<PdfPage> {
-        let ptr = unsafe { ffi::pdf_thumbnail_view_selected_page_at(self.handle.as_ptr(), index as u64) };
+        let ptr =
+            unsafe { ffi::pdf_thumbnail_view_selected_page_at(self.handle.as_ptr(), index as u64) };
         unsafe { ObjectHandle::from_retained_ptr(ptr) }.map(PdfPage::from_handle)
     }
 

@@ -36,7 +36,9 @@ impl PdfBorder {
 
     pub fn set_style(&self, style: PdfBorderStyle) -> Result<()> {
         let mut out_error = ptr::null_mut();
-        let status = unsafe { ffi::pdf_border_set_style(self.handle.as_ptr(), style as i32, &mut out_error) };
+        let status = unsafe {
+            ffi::pdf_border_set_style(self.handle.as_ptr(), style as i32, &mut out_error)
+        };
         crate::util::status_result(status, out_error)
     }
 
@@ -46,7 +48,9 @@ impl PdfBorder {
 
     pub fn set_dash_pattern(&self, dash_pattern: Option<&[f64]>) -> Result<()> {
         let mut out_error = ptr::null_mut();
-        let (values, len) = dash_pattern.map_or((ptr::null(), 0_u64), |values| (values.as_ptr(), values.len() as u64));
+        let (values, len) = dash_pattern.map_or((ptr::null(), 0_u64), |values| {
+            (values.as_ptr(), values.len() as u64)
+        });
         let status = unsafe {
             ffi::pdf_border_set_dash_pattern(self.handle.as_ptr(), values, len, &mut out_error)
         };

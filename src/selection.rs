@@ -114,7 +114,8 @@ impl PdfSelection {
 
     #[must_use]
     pub fn selection_by_line(&self, index: usize) -> Option<Self> {
-        let ptr = unsafe { ffi::pdf_selection_selection_by_line_at(self.handle.as_ptr(), index as u64) };
+        let ptr =
+            unsafe { ffi::pdf_selection_selection_by_line_at(self.handle.as_ptr(), index as u64) };
         unsafe { ObjectHandle::from_retained_ptr(ptr) }.map(Self::from_handle)
     }
 

@@ -20,7 +20,8 @@ impl PdfActionUrl {
         let url = c_string(url)?;
         let mut out_action = ptr::null_mut();
         let mut out_error = ptr::null_mut();
-        let status = unsafe { ffi::pdf_action_url_new(url.as_ptr(), &mut out_action, &mut out_error) };
+        let status =
+            unsafe { ffi::pdf_action_url_new(url.as_ptr(), &mut out_action, &mut out_error) };
         crate::util::status_result(status, out_error)?;
         Ok(Self::from_handle(crate::util::required_handle(
             out_action,
@@ -36,7 +37,9 @@ impl PdfActionUrl {
     pub fn set_url(&self, url: &str) -> Result<()> {
         let url = c_string(url)?;
         let mut out_error = ptr::null_mut();
-        let status = unsafe { ffi::pdf_action_url_set_url(self.handle.as_ptr(), url.as_ptr(), &mut out_error) };
+        let status = unsafe {
+            ffi::pdf_action_url_set_url(self.handle.as_ptr(), url.as_ptr(), &mut out_error)
+        };
         crate::util::status_result(status, out_error)
     }
 

@@ -106,7 +106,8 @@ impl PdfDocument {
 
     #[must_use]
     pub fn page_index(&self, page: &PdfPage) -> Option<usize> {
-        let index = unsafe { ffi::pdf_document_index_for_page(self.handle.as_ptr(), page.as_handle_ptr()) };
+        let index =
+            unsafe { ffi::pdf_document_index_for_page(self.handle.as_ptr(), page.as_handle_ptr()) };
         (index != u64::MAX).then_some(index as usize)
     }
 

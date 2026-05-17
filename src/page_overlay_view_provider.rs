@@ -11,7 +11,11 @@ use crate::page_overlay_view::PdfPageOverlayView;
 use crate::view::PdfView;
 
 pub trait PdfPageOverlayViewProvider: 'static {
-    fn overlay_view_for_page(&mut self, _view: PdfView, _page: PdfPage) -> Option<PdfPageOverlayView> {
+    fn overlay_view_for_page(
+        &mut self,
+        _view: PdfView,
+        _page: PdfPage,
+    ) -> Option<PdfPageOverlayView> {
         None
     }
 
@@ -136,7 +140,9 @@ unsafe extern "C" fn pdf_page_overlay_view_provider_will_display_trampoline(
         let Some(page) = (unsafe { retained_page(page_handle) }) else {
             return;
         };
-        state.provider.will_display_overlay_view(view, overlay_view, page);
+        state
+            .provider
+            .will_display_overlay_view(view, overlay_view, page);
     }));
 }
 

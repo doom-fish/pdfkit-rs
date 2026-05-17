@@ -39,8 +39,7 @@ pub(crate) fn status_result(status: i32, error_ptr: *mut c_char) -> Result<()> {
         return Ok(());
     }
 
-    let message =
-        take_string(error_ptr).unwrap_or_else(|| format!("PDFKit bridge error {status}"));
+    let message = take_string(error_ptr).unwrap_or_else(|| format!("PDFKit bridge error {status}"));
     Err(PdfKitError::new(status, message))
 }
 

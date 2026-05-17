@@ -28,16 +28,19 @@ impl PdfView {
     pub fn new(size: PdfSize) -> Result<Self> {
         let mut out_view = ptr::null_mut();
         let mut out_error = ptr::null_mut();
-        let status = unsafe { ffi::pdf_view_new(size.width, size.height, &mut out_view, &mut out_error) };
+        let status =
+            unsafe { ffi::pdf_view_new(size.width, size.height, &mut out_view, &mut out_error) };
         crate::util::status_result(status, out_error)?;
         Ok(Self::from_handle(crate::util::required_handle(
-            out_view,
-            "PDFView",
+            out_view, "PDFView",
         )?))
     }
 
     pub fn info(&self) -> Result<PdfViewInfo> {
-        parse_json(unsafe { ffi::pdf_view_info_json(self.handle.as_ptr()) }, "PDFView")
+        parse_json(
+            unsafe { ffi::pdf_view_info_json(self.handle.as_ptr()) },
+            "PDFView",
+        )
     }
 
     #[must_use]
@@ -78,7 +81,10 @@ impl PdfView {
         let status = unsafe {
             ffi::pdf_view_set_page_overlay_view_provider(
                 self.handle.as_ptr(),
-                provider.map_or(ptr::null_mut(), PdfPageOverlayViewProviderHandle::as_handle_ptr),
+                provider.map_or(
+                    ptr::null_mut(),
+                    PdfPageOverlayViewProviderHandle::as_handle_ptr,
+                ),
                 &mut out_error,
             )
         };
@@ -103,7 +109,11 @@ impl PdfView {
         unsafe { ObjectHandle::from_retained_ptr(ptr) }.map(PdfSelection::from_handle)
     }
 
-    pub fn set_current_selection(&self, selection: Option<&PdfSelection>, animate: bool) -> Result<()> {
+    pub fn set_current_selection(
+        &self,
+        selection: Option<&PdfSelection>,
+        animate: bool,
+    ) -> Result<()> {
         let mut out_error = ptr::null_mut();
         let status = unsafe {
             ffi::pdf_view_set_current_selection(
@@ -122,7 +132,9 @@ impl PdfView {
 
     pub fn go_to_page(&self, page: &PdfPage) -> Result<()> {
         let mut out_error = ptr::null_mut();
-        let status = unsafe { ffi::pdf_view_go_to_page(self.handle.as_ptr(), page.as_handle_ptr(), &mut out_error) };
+        let status = unsafe {
+            ffi::pdf_view_go_to_page(self.handle.as_ptr(), page.as_handle_ptr(), &mut out_error)
+        };
         crate::util::status_result(status, out_error)
     }
 
@@ -152,14 +164,20 @@ impl PdfView {
 
     pub fn set_display_mode(&self, mode: PdfDisplayMode) -> Result<()> {
         let mut out_error = ptr::null_mut();
-        let status = unsafe { ffi::pdf_view_set_display_mode(self.handle.as_ptr(), mode as i32, &mut out_error) };
+        let status = unsafe {
+            ffi::pdf_view_set_display_mode(self.handle.as_ptr(), mode as i32, &mut out_error)
+        };
         crate::util::status_result(status, out_error)
     }
 
     pub fn set_display_direction(&self, direction: PdfDisplayDirection) -> Result<()> {
         let mut out_error = ptr::null_mut();
         let status = unsafe {
-            ffi::pdf_view_set_display_direction(self.handle.as_ptr(), direction as i32, &mut out_error)
+            ffi::pdf_view_set_display_direction(
+                self.handle.as_ptr(),
+                direction as i32,
+                &mut out_error,
+            )
         };
         crate::util::status_result(status, out_error)
     }
@@ -167,7 +185,11 @@ impl PdfView {
     pub fn set_display_box(&self, display_box: DisplayBox) -> Result<()> {
         let mut out_error = ptr::null_mut();
         let status = unsafe {
-            ffi::pdf_view_set_display_box(self.handle.as_ptr(), display_box.as_raw(), &mut out_error)
+            ffi::pdf_view_set_display_box(
+                self.handle.as_ptr(),
+                display_box.as_raw(),
+                &mut out_error,
+            )
         };
         crate::util::status_result(status, out_error)
     }

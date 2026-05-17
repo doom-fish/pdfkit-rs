@@ -24,8 +24,7 @@ impl PdfPage {
         let status = unsafe { ffi::pdf_page_new(&mut out_page, &mut out_error) };
         crate::util::status_result(status, out_error)?;
         Ok(Self::from_handle(crate::util::required_handle(
-            out_page,
-            "PDFPage",
+            out_page, "PDFPage",
         )?))
     }
 
@@ -53,8 +52,7 @@ impl PdfPage {
         };
         crate::util::status_result(status, out_error)?;
         Ok(Self::from_handle(crate::util::required_handle(
-            out_page,
-            "PDFPage",
+            out_page, "PDFPage",
         )?))
     }
 
@@ -80,7 +78,8 @@ impl PdfPage {
 
     pub fn set_rotation(&self, rotation: i32) -> Result<()> {
         let mut out_error = ptr::null_mut();
-        let status = unsafe { ffi::pdf_page_set_rotation(self.handle.as_ptr(), rotation, &mut out_error) };
+        let status =
+            unsafe { ffi::pdf_page_set_rotation(self.handle.as_ptr(), rotation, &mut out_error) };
         crate::util::status_result(status, out_error)
     }
 
@@ -127,7 +126,8 @@ impl PdfPage {
     #[must_use]
     pub fn document(&self) -> Option<crate::document::PdfDocument> {
         let ptr = unsafe { ffi::pdf_page_document(self.handle.as_ptr()) };
-        unsafe { ObjectHandle::from_retained_ptr(ptr) }.map(crate::document::PdfDocument::from_handle)
+        unsafe { ObjectHandle::from_retained_ptr(ptr) }
+            .map(crate::document::PdfDocument::from_handle)
     }
 
     #[must_use]
@@ -174,7 +174,8 @@ impl PdfPage {
 
     #[must_use]
     pub fn annotation_at_point(&self, point: PdfPoint) -> Option<PdfAnnotation> {
-        let ptr = unsafe { ffi::pdf_page_annotation_at_point(self.handle.as_ptr(), point.x, point.y) };
+        let ptr =
+            unsafe { ffi::pdf_page_annotation_at_point(self.handle.as_ptr(), point.x, point.y) };
         unsafe { ObjectHandle::from_retained_ptr(ptr) }.map(PdfAnnotation::from_handle)
     }
 
@@ -256,7 +257,9 @@ impl PdfPage {
 
     #[must_use]
     pub fn character_index_at_point(&self, point: PdfPoint) -> Option<usize> {
-        let index = unsafe { ffi::pdf_page_character_index_at_point(self.handle.as_ptr(), point.x, point.y) };
+        let index = unsafe {
+            ffi::pdf_page_character_index_at_point(self.handle.as_ptr(), point.x, point.y)
+        };
         (index != i64::MAX)
             .then_some(index)
             .and_then(|index| usize::try_from(index).ok())

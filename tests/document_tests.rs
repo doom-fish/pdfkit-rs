@@ -6,7 +6,10 @@ use pdfkit::prelude::*;
 fn document_open_and_write_roundtrip() -> Result<()> {
     let document = common::fixture_document()?;
     assert_eq!(document.page_count(), 1);
-    assert!(document.string().unwrap_or_default().contains("Hello PDFKit"));
+    assert!(document
+        .string()
+        .unwrap_or_default()
+        .contains("Hello PDFKit"));
 
     let output = common::output_path("document-roundtrip.pdf");
     document.write_to_url(&output)?;

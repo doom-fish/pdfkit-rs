@@ -33,8 +33,14 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 
     println!(
         "named={:?} remote_url={:?}",
-        outline.action().and_then(|action| action.as_named()).and_then(|action| action.name()),
-        annotation.action().and_then(|action| action.as_remote_goto()).and_then(|action| action.url())
+        outline
+            .action()
+            .and_then(|action| action.as_named())
+            .and_then(|action| action.name()),
+        annotation
+            .action()
+            .and_then(|action| action.as_remote_goto())
+            .and_then(|action| action.url())
     );
     println!("✅ pdfkit named/remote actions OK");
     Ok(())

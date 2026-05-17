@@ -71,7 +71,10 @@ fn notifications_new_enums_and_write_options_builders_are_exposed() {
         PdfThumbnailViewNotification::DocumentEdited.name(),
         "PDFThumbnailViewDocumentEditedNotification"
     );
-    assert_eq!(PdfActionNamedName::from_raw(8), Some(PdfActionNamedName::Find));
+    assert_eq!(
+        PdfActionNamedName::from_raw(8),
+        Some(PdfActionNamedName::Find)
+    );
     assert_eq!(PdfActionNamedName::ZoomOut.as_raw(), 11);
     assert_eq!(PdfLineStyle::from_raw(4), Some(PdfLineStyle::OpenArrow));
     assert_eq!(PdfMarkupType::from_raw(3), Some(PdfMarkupType::Redact));

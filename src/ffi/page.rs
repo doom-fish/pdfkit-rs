@@ -51,7 +51,11 @@ unsafe extern "C" {
         out_error_message: *mut *mut c_char,
     ) -> i32;
     pub fn pdf_page_annotation_at_point(page_handle: *mut c_void, x: f64, y: f64) -> *mut c_void;
-    pub fn pdf_page_selection_for_range(handle: *mut c_void, location: u64, length: u64) -> *mut c_void;
+    pub fn pdf_page_selection_for_range(
+        handle: *mut c_void,
+        location: u64,
+        length: u64,
+    ) -> *mut c_void;
     pub fn pdf_page_selection_for_rect(
         handle: *mut c_void,
         x: f64,
@@ -59,8 +63,10 @@ unsafe extern "C" {
         width: f64,
         height: f64,
     ) -> *mut c_void;
-    pub fn pdf_page_selection_for_word_at_point(handle: *mut c_void, x: f64, y: f64) -> *mut c_void;
-    pub fn pdf_page_selection_for_line_at_point(handle: *mut c_void, x: f64, y: f64) -> *mut c_void;
+    pub fn pdf_page_selection_for_word_at_point(handle: *mut c_void, x: f64, y: f64)
+        -> *mut c_void;
+    pub fn pdf_page_selection_for_line_at_point(handle: *mut c_void, x: f64, y: f64)
+        -> *mut c_void;
     pub fn pdf_page_selection_from_points(
         handle: *mut c_void,
         start_x: f64,

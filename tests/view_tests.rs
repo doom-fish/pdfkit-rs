@@ -7,7 +7,10 @@ fn pdf_view_tracks_document_and_selection() -> Result<()> {
     let document = common::fixture_document()?;
     let page = document.page(0).expect("page");
     let selection = page.selection_for_range(0, 5).expect("selection");
-    let view = PdfView::new(PdfSize { width: 320.0, height: 480.0 })?;
+    let view = PdfView::new(PdfSize {
+        width: 320.0,
+        height: 480.0,
+    })?;
     view.set_document(Some(&document))?;
     view.set_display_mode(PdfDisplayMode::SinglePage)?;
     view.set_display_direction(PdfDisplayDirection::Vertical)?;

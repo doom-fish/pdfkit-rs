@@ -3,7 +3,11 @@
 use core::ffi::{c_char, c_void};
 
 pub type PdfPageOverlayViewProviderOverlayCallback = Option<
-    unsafe extern "C" fn(context: *mut c_void, view_handle: *mut c_void, page_handle: *mut c_void) -> *mut c_void,
+    unsafe extern "C" fn(
+        context: *mut c_void,
+        view_handle: *mut c_void,
+        page_handle: *mut c_void,
+    ) -> *mut c_void,
 >;
 pub type PdfPageOverlayViewProviderDisplayCallback = Option<
     unsafe extern "C" fn(

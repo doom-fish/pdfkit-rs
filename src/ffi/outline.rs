@@ -3,7 +3,10 @@
 use core::ffi::{c_char, c_void};
 
 unsafe extern "C" {
-    pub fn pdf_outline_new(out_outline: *mut *mut c_void, out_error_message: *mut *mut c_char) -> i32;
+    pub fn pdf_outline_new(
+        out_outline: *mut *mut c_void,
+        out_error_message: *mut *mut c_char,
+    ) -> i32;
     pub fn pdf_outline_label_string(handle: *mut c_void) -> *mut c_char;
     pub fn pdf_outline_set_label(
         handle: *mut c_void,

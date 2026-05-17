@@ -3,7 +3,6 @@ mod support;
 
 use std::cmp::Ordering;
 
-
 fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let (_document, page) = support::empty_document_with_page()?;
     let destination = support::sample_destination(&page)?;

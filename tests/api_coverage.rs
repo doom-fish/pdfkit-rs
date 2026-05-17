@@ -40,7 +40,11 @@ fn read_bridge() -> String {
 }
 
 fn read_src(path: &str) -> String {
-    read(&PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("src").join(path))
+    read(
+        &PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("src")
+            .join(path),
+    )
 }
 
 fn assert_contains_all(haystack: &str, needles: &[&str]) {
@@ -174,11 +178,41 @@ fn action_border_destination_and_appearance_surface_is_present() {
     let destination_header = read_header("PDFDestination");
     let appearance_header = read_header("PDFAppearanceCharacteristics");
 
-    assert_contains_all(&action_url_header, &["- (instancetype)initWithURL:(NSURL *)url", "@property (nonatomic, copy, nullable) NSURL *URL;"]);
-    assert_contains_all(&action_goto_header, &["- (instancetype)initWithDestination:(PDFDestination *)destination", "@property (nonatomic, strong) PDFDestination *destination;"]);
-    assert_contains_all(&border_header, &["@property (nonatomic) PDFBorderStyle style;", "@property (nonatomic, copy, nullable) NSArray *dashPattern;"]);
-    assert_contains_all(&destination_header, &["- (instancetype)initWithPage:(PDFPage *)page atPoint:(PDFPoint)point", "- (NSComparisonResult)compare:(PDFDestination *)destination"]);
-    assert_contains_all(&appearance_header, &["@property (nonatomic) PDFWidgetControlType controlType;", "@property (nonatomic, copy, nullable) NSString *caption;"]);
+    assert_contains_all(
+        &action_url_header,
+        &[
+            "- (instancetype)initWithURL:(NSURL *)url",
+            "@property (nonatomic, copy, nullable) NSURL *URL;",
+        ],
+    );
+    assert_contains_all(
+        &action_goto_header,
+        &[
+            "- (instancetype)initWithDestination:(PDFDestination *)destination",
+            "@property (nonatomic, strong) PDFDestination *destination;",
+        ],
+    );
+    assert_contains_all(
+        &border_header,
+        &[
+            "@property (nonatomic) PDFBorderStyle style;",
+            "@property (nonatomic, copy, nullable) NSArray *dashPattern;",
+        ],
+    );
+    assert_contains_all(
+        &destination_header,
+        &[
+            "- (instancetype)initWithPage:(PDFPage *)page atPoint:(PDFPoint)point",
+            "- (NSComparisonResult)compare:(PDFDestination *)destination",
+        ],
+    );
+    assert_contains_all(
+        &appearance_header,
+        &[
+            "@property (nonatomic) PDFWidgetControlType controlType;",
+            "@property (nonatomic, copy, nullable) NSString *caption;",
+        ],
+    );
 
     let bridge = read_bridge();
     assert_contains_all(
@@ -203,7 +237,10 @@ fn advanced_action_delegate_notification_and_option_surface_is_present() {
     let view_header = read_header("PDFView");
     let thumbnail_header = read_header("PDFThumbnailView");
 
-    assert_contains_all(&action_header, &["@property (nonatomic, readonly) NSString *type;"]);
+    assert_contains_all(
+        &action_header,
+        &["@property (nonatomic, readonly) NSString *type;"],
+    );
     assert_contains_all(
         &action_named_header,
         &[
@@ -334,10 +371,7 @@ fn exhaustive_gap_closure_surface_is_present() {
             "PDFAnnotationHighlightingMode PDFAnnotationHighlightingModePush",
         ],
     );
-    assert_contains_all(
-        &destination_header,
-        &["kPDFDestinationUnspecifiedValue"],
-    );
+    assert_contains_all(&destination_header, &["kPDFDestinationUnspecifiedValue"]);
     assert_contains_all(
         &document_header,
         &[

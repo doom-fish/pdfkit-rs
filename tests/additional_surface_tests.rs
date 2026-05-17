@@ -3,10 +3,9 @@ mod common;
 use pdfkit::prelude::*;
 
 const TINY_PNG: &[u8] = &[
-    137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 13, 73, 72, 68, 82, 0, 0, 0, 1, 0, 0,
-    0, 1, 8, 6, 0, 0, 0, 31, 21, 196, 137, 0, 0, 0, 13, 73, 68, 65, 84, 120, 156,
-    99, 248, 255, 255, 63, 0, 5, 254, 2, 254, 167, 53, 129, 132, 0, 0, 0, 0, 73, 69,
-    78, 68, 174, 66, 96, 130,
+    137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 13, 73, 72, 68, 82, 0, 0, 0, 1, 0, 0, 0, 1, 8, 6, 0,
+    0, 0, 31, 21, 196, 137, 0, 0, 0, 13, 73, 68, 65, 84, 120, 156, 99, 248, 255, 255, 63, 0, 5,
+    254, 2, 254, 167, 53, 129, 132, 0, 0, 0, 0, 73, 69, 78, 68, 174, 66, 96, 130,
 ];
 
 struct NoopViewDelegate;
@@ -36,9 +35,18 @@ fn new_string_and_utility_enums_are_exposed() {
     assert_eq!(PdfAnnotationWidgetSubtype::Button.name(), "/Btn");
     assert_eq!(PdfAnnotationKey::WidgetValue.name(), "/V");
 
-    assert_eq!(PdfTextAnnotationIconType::from_raw(6), Some(PdfTextAnnotationIconType::Insert));
-    assert_eq!(PdfWidgetCellState::from_raw(-1), Some(PdfWidgetCellState::Mixed));
-    assert_eq!(PdfPrintScalingMode::from_raw(2), Some(PdfPrintScalingMode::DownToFit));
+    assert_eq!(
+        PdfTextAnnotationIconType::from_raw(6),
+        Some(PdfTextAnnotationIconType::Insert)
+    );
+    assert_eq!(
+        PdfWidgetCellState::from_raw(-1),
+        Some(PdfWidgetCellState::Mixed)
+    );
+    assert_eq!(
+        PdfPrintScalingMode::from_raw(2),
+        Some(PdfPrintScalingMode::DownToFit)
+    );
     assert_eq!(
         PdfSelectionGranularity::from_raw(1),
         Some(PdfSelectionGranularity::Word)
@@ -79,7 +87,10 @@ fn action_reset_form_roundtrips_fields() -> Result<()> {
     assert!(action.fields_included_are_cleared());
 
     action.set_fields(["firstName", "lastName"])?;
-    assert_eq!(action.fields()?, vec!["firstName".to_string(), "lastName".to_string()]);
+    assert_eq!(
+        action.fields()?,
+        vec!["firstName".to_string(), "lastName".to_string()]
+    );
     action.set_fields_included_are_cleared(false);
     assert!(!action.fields_included_are_cleared());
 
@@ -96,7 +107,10 @@ fn action_reset_form_roundtrips_fields() -> Result<()> {
     let generic_action = annotation.action().expect("generic action");
     let reset_form = generic_action.as_reset_form().expect("reset-form action");
     assert_eq!(generic_action.action_type().as_deref(), Some("ResetForm"));
-    assert_eq!(reset_form.fields()?, vec!["firstName".to_string(), "lastName".to_string()]);
+    assert_eq!(
+        reset_form.fields()?,
+        vec!["firstName".to_string(), "lastName".to_string()]
+    );
 
     reset_form.clear_fields()?;
     assert!(reset_form.fields()?.is_empty());

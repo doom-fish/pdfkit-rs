@@ -89,14 +89,17 @@ impl PdfViewDelegateHandle {
 
 impl fmt::Debug for PdfViewDelegateHandle {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("PdfViewDelegateHandle").finish_non_exhaustive()
+        f.debug_struct("PdfViewDelegateHandle")
+            .finish_non_exhaustive()
     }
 }
 
 fn duplicate_string(value: Option<String>) -> *mut c_char {
-    value.and_then(|value| CString::new(value).ok()).map_or(ptr::null_mut(), |value| unsafe {
-        libc::strdup(value.as_ptr())
-    })
+    value
+        .and_then(|value| CString::new(value).ok())
+        .map_or(ptr::null_mut(), |value| unsafe {
+            libc::strdup(value.as_ptr())
+        })
 }
 
 unsafe fn delegate_state(context: *mut c_void) -> Option<&'static mut DelegateState> {
@@ -123,8 +126,8 @@ unsafe extern "C" fn pdf_view_delegate_link_click_trampoline(
         let Some(view) = (unsafe { retained_view(view_handle) }) else {
             return 0;
         };
-        let Some(url) = (!url.is_null())
-            .then(|| unsafe { CStr::from_ptr(url).to_string_lossy().into_owned() })
+        let Some(url) =
+            (!url.is_null()).then(|| unsafe { CStr::from_ptr(url).to_string_lossy().into_owned() })
         else {
             return 0;
         };

@@ -66,14 +66,17 @@ impl PdfDocumentDelegateHandle {
 
 impl fmt::Debug for PdfDocumentDelegateHandle {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("PdfDocumentDelegateHandle").finish_non_exhaustive()
+        f.debug_struct("PdfDocumentDelegateHandle")
+            .finish_non_exhaustive()
     }
 }
 
 fn duplicate_string(value: Option<String>) -> *mut c_char {
-    value.and_then(|value| CString::new(value).ok()).map_or(ptr::null_mut(), |value| unsafe {
-        libc::strdup(value.as_ptr())
-    })
+    value
+        .and_then(|value| CString::new(value).ok())
+        .map_or(ptr::null_mut(), |value| unsafe {
+            libc::strdup(value.as_ptr())
+        })
 }
 
 unsafe fn delegate_state(context: *mut c_void) -> Option<&'static mut DelegateState> {
@@ -106,7 +109,9 @@ unsafe extern "C" fn pdf_document_delegate_match_trampoline(
         let Some(handle) = (unsafe { ObjectHandle::from_retained_ptr(selection_handle) }) else {
             return;
         };
-        state.delegate.did_match_string(PdfSelection::from_handle(handle));
+        state
+            .delegate
+            .did_match_string(PdfSelection::from_handle(handle));
     }));
 }
 
@@ -130,9 +135,11 @@ unsafe extern "C" fn pdf_document_delegate_annotation_class_name_trampoline(
         let Some(state) = (unsafe { delegate_state(context) }) else {
             return ptr::null_mut();
         };
-        let Some(annotation_type) = (!annotation_type.is_null())
-            .then(|| unsafe { CStr::from_ptr(annotation_type).to_string_lossy().into_owned() })
-        else {
+        let Some(annotation_type) = (!annotation_type.is_null()).then(|| unsafe {
+            CStr::from_ptr(annotation_type)
+                .to_string_lossy()
+                .into_owned()
+        }) else {
             return ptr::null_mut();
         };
         duplicate_string(state.delegate.annotation_class_name(&annotation_type))

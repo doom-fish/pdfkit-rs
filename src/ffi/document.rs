@@ -23,7 +23,10 @@ unsafe extern "C" {
     pub fn pdf_document_string(handle: *mut c_void) -> *mut c_char;
     pub fn pdf_document_page_count(handle: *mut c_void) -> u64;
     pub fn pdf_document_page_at(handle: *mut c_void, index: u64) -> *mut c_void;
-    pub fn pdf_document_index_for_page(document_handle: *mut c_void, page_handle: *mut c_void) -> u64;
+    pub fn pdf_document_index_for_page(
+        document_handle: *mut c_void,
+        page_handle: *mut c_void,
+    ) -> u64;
     pub fn pdf_document_outline_root(handle: *mut c_void) -> *mut c_void;
     pub fn pdf_document_set_outline_root(
         document_handle: *mut c_void,

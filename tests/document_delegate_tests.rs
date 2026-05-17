@@ -51,7 +51,10 @@ fn document_delegate_can_override_page_and_annotation_classes() -> Result<()> {
     let reopened_page = document.page(0).expect("page");
     assert_eq!(reopened_page.annotation_count(), 1);
     let reopened_annotation = reopened_page.annotation(0).expect("annotation");
-    assert_eq!(reopened_annotation.info()?.annotation_type.as_deref(), Some("Link"));
+    assert_eq!(
+        reopened_annotation.info()?.annotation_type.as_deref(),
+        Some("Link")
+    );
 
     let counts = counts.borrow();
     assert!(counts.page_class_requests > 0);

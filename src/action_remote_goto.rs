@@ -44,7 +44,9 @@ impl PdfActionRemoteGoTo {
     }
 
     pub fn set_page_index(&self, page_index: usize) {
-        unsafe { ffi::pdf_action_remote_goto_set_page_index(self.handle.as_ptr(), page_index as u64) };
+        unsafe {
+            ffi::pdf_action_remote_goto_set_page_index(self.handle.as_ptr(), page_index as u64)
+        };
     }
 
     #[must_use]

@@ -64,7 +64,11 @@ impl PdfActionResetForm {
     pub fn clear_fields(&self) -> Result<()> {
         let mut out_error = ptr::null_mut();
         let status = unsafe {
-            ffi::pdf_action_reset_form_set_fields_json(self.handle.as_ptr(), ptr::null(), &mut out_error)
+            ffi::pdf_action_reset_form_set_fields_json(
+                self.handle.as_ptr(),
+                ptr::null(),
+                &mut out_error,
+            )
         };
         crate::util::status_result(status, out_error)
     }

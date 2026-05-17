@@ -6,8 +6,16 @@ use pdfkit::prelude::*;
 fn page_bounds_and_selection_helpers() -> Result<()> {
     let page = common::fixture_page()?;
     assert!(page.bounds(DisplayBox::CropBox).width > 0.0);
-    assert_eq!(page.selection_for_word_at_point(common::word_point()).and_then(|selection| selection.string()), Some("Hello".to_string()));
-    assert!(page.selection_for_line_at_point(common::word_point()).and_then(|selection| selection.string()).unwrap_or_default().contains("Hello PDFKit"));
+    assert_eq!(
+        page.selection_for_word_at_point(common::word_point())
+            .and_then(|selection| selection.string()),
+        Some("Hello".to_string())
+    );
+    assert!(page
+        .selection_for_line_at_point(common::word_point())
+        .and_then(|selection| selection.string())
+        .unwrap_or_default()
+        .contains("Hello PDFKit"));
     let first_character = page.character_bounds_at(0);
     let midpoint = PdfPoint {
         x: first_character.x + (first_character.width / 2.0),

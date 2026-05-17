@@ -43,7 +43,10 @@ impl PdfAnnotation {
         )?))
     }
 
-    pub fn new_with_subtype(bounds: PdfRect, annotation_subtype: PdfAnnotationSubtype) -> Result<Self> {
+    pub fn new_with_subtype(
+        bounds: PdfRect,
+        annotation_subtype: PdfAnnotationSubtype,
+    ) -> Result<Self> {
         let annotation_type = c_string(annotation_subtype.name())?;
         let mut out_annotation = ptr::null_mut();
         let mut out_error = ptr::null_mut();

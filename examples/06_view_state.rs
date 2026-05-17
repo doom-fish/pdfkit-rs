@@ -5,7 +5,9 @@ use pdfkit::prelude::*;
 
 fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let document = support::fixture_document()?;
-    let page = document.page(0).ok_or_else(|| std::io::Error::other("missing page"))?;
+    let page = document
+        .page(0)
+        .ok_or_else(|| std::io::Error::other("missing page"))?;
     let selection = page
         .selection_for_range(0, 5)
         .ok_or_else(|| std::io::Error::other("missing selection"))?;

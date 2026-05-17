@@ -2,16 +2,22 @@
 
 use core::ffi::{c_char, c_void};
 
-pub type PdfViewDelegateLinkClickCallback =
-    Option<unsafe extern "C" fn(context: *mut c_void, view_handle: *mut c_void, url: *const c_char) -> i32>;
-pub type PdfViewDelegateScaleFactorCallback =
-    Option<unsafe extern "C" fn(context: *mut c_void, view_handle: *mut c_void, scale_factor: f64) -> f64>;
+pub type PdfViewDelegateLinkClickCallback = Option<
+    unsafe extern "C" fn(context: *mut c_void, view_handle: *mut c_void, url: *const c_char) -> i32,
+>;
+pub type PdfViewDelegateScaleFactorCallback = Option<
+    unsafe extern "C" fn(context: *mut c_void, view_handle: *mut c_void, scale_factor: f64) -> f64,
+>;
 pub type PdfViewDelegatePrintJobTitleCallback =
     Option<unsafe extern "C" fn(context: *mut c_void, view_handle: *mut c_void) -> *mut c_char>;
 pub type PdfViewDelegateBoolCallback =
     Option<unsafe extern "C" fn(context: *mut c_void, view_handle: *mut c_void) -> i32>;
 pub type PdfViewDelegateRemoteGoToCallback = Option<
-    unsafe extern "C" fn(context: *mut c_void, view_handle: *mut c_void, action_handle: *mut c_void) -> i32,
+    unsafe extern "C" fn(
+        context: *mut c_void,
+        view_handle: *mut c_void,
+        action_handle: *mut c_void,
+    ) -> i32,
 >;
 
 unsafe extern "C" {

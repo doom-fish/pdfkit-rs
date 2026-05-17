@@ -19,9 +19,8 @@ impl PdfAppearanceCharacteristics {
     pub fn new() -> Result<Self> {
         let mut out_value = ptr::null_mut();
         let mut out_error = ptr::null_mut();
-        let status = unsafe {
-            ffi::pdf_appearance_characteristics_new(&mut out_value, &mut out_error)
-        };
+        let status =
+            unsafe { ffi::pdf_appearance_characteristics_new(&mut out_value, &mut out_error) };
         crate::util::status_result(status, out_error)?;
         Ok(Self::from_handle(crate::util::required_handle(
             out_value,

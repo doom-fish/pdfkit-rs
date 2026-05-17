@@ -20,7 +20,8 @@ impl PdfActionNamed {
     pub fn new(name: PdfActionNamedName) -> Result<Self> {
         let mut out_action = ptr::null_mut();
         let mut out_error = ptr::null_mut();
-        let status = unsafe { ffi::pdf_action_named_new(name.as_raw(), &mut out_action, &mut out_error) };
+        let status =
+            unsafe { ffi::pdf_action_named_new(name.as_raw(), &mut out_action, &mut out_error) };
         crate::util::status_result(status, out_error)?;
         Ok(Self::from_handle(crate::util::required_handle(
             out_action,
@@ -30,7 +31,9 @@ impl PdfActionNamed {
 
     #[must_use]
     pub fn name(&self) -> Option<PdfActionNamedName> {
-        PdfActionNamedName::from_raw(unsafe { ffi::pdf_action_named_name_raw(self.handle.as_ptr()) })
+        PdfActionNamedName::from_raw(unsafe {
+            ffi::pdf_action_named_name_raw(self.handle.as_ptr())
+        })
     }
 
     pub fn set_name(&self, name: PdfActionNamedName) -> Result<()> {

@@ -1,7 +1,6 @@
 #[path = "common/mod.rs"]
 mod support;
 
-
 fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let document = support::fixture_document()?;
     let info = document.info()?;
@@ -15,7 +14,12 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         return Err(std::io::Error::other("expected written document").into());
     }
 
-    println!("pages={} encrypted={} page_class={}", document.page_count(), info.is_encrypted, info.page_class);
+    println!(
+        "pages={} encrypted={} page_class={}",
+        document.page_count(),
+        info.is_encrypted,
+        info.page_class
+    );
     println!("attributes={:?}", document.attributes()?);
     println!("✅ pdfkit document OK");
     Ok(())
