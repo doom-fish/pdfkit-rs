@@ -62,7 +62,7 @@ impl PdfThumbnailView {
                 self.handle.as_ptr(),
                 size.width,
                 size.height,
-            )
+            );
         };
     }
 
@@ -71,13 +71,13 @@ impl PdfThumbnailView {
             ffi::pdf_thumbnail_view_set_maximum_number_of_columns(
                 self.handle.as_ptr(),
                 value as u64,
-            )
+            );
         };
     }
 
     pub fn set_allows_dragging(&self, value: bool) {
         unsafe {
-            ffi::pdf_thumbnail_view_set_allows_dragging(self.handle.as_ptr(), i32::from(value))
+            ffi::pdf_thumbnail_view_set_allows_dragging(self.handle.as_ptr(), i32::from(value));
         };
     }
 
