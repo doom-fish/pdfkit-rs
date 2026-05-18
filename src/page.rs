@@ -8,6 +8,7 @@ use crate::selection::PdfSelection;
 use crate::types::{DisplayBox, PdfPageImageInitializationOptions, PdfPoint, PdfRect};
 use crate::util::{c_string, take_string};
 
+/// Wraps `PDFPage`.
 #[derive(Debug, Clone)]
 pub struct PdfPage {
     handle: ObjectHandle,
@@ -18,6 +19,7 @@ impl PdfPage {
         Self { handle }
     }
 
+    /// Wraps `PDFPage()`.
     pub fn new() -> Result<Self> {
         let mut out_page = ptr::null_mut();
         let mut out_error = ptr::null_mut();
@@ -28,6 +30,7 @@ impl PdfPage {
         )?))
     }
 
+    /// Wraps the image-based `PDFPage` initializer.
     pub fn from_image_data(
         image_data: &[u8],
         options: &PdfPageImageInitializationOptions,
@@ -56,26 +59,31 @@ impl PdfPage {
         )?))
     }
 
+    /// Wraps the corresponding `PDFPage` API.
     #[must_use]
     pub fn label(&self) -> Option<String> {
         take_string(unsafe { ffi::pdf_page_label_string(self.handle.as_ptr()) })
     }
 
+    /// Wraps the corresponding `PDFPage` API.
     #[must_use]
     pub fn string(&self) -> Option<String> {
         take_string(unsafe { ffi::pdf_page_string(self.handle.as_ptr()) })
     }
 
+    /// Wraps the corresponding `PDFPage` API.
     #[must_use]
     pub fn number_of_characters(&self) -> usize {
         unsafe { ffi::pdf_page_number_of_characters(self.handle.as_ptr()) as usize }
     }
 
+    /// Wraps the corresponding `PDFPage` API.
     #[must_use]
     pub fn rotation(&self) -> i32 {
         unsafe { ffi::pdf_page_rotation(self.handle.as_ptr()) }
     }
 
+    /// Wraps the corresponding `PDFPage` API.
     pub fn set_rotation(&self, rotation: i32) -> Result<()> {
         let mut out_error = ptr::null_mut();
         let status =
@@ -83,6 +91,7 @@ impl PdfPage {
         crate::util::status_result(status, out_error)
     }
 
+    /// Wraps the corresponding `PDFPage` API.
     #[must_use]
     pub fn bounds(&self, display_box: DisplayBox) -> PdfRect {
         let mut x = 0.0_f64;
@@ -107,6 +116,7 @@ impl PdfPage {
         }
     }
 
+    /// Wraps the corresponding `PDFPage` API.
     pub fn set_bounds(&self, display_box: DisplayBox, bounds: PdfRect) -> Result<()> {
         let mut out_error = ptr::null_mut();
         let status = unsafe {
@@ -123,6 +133,7 @@ impl PdfPage {
         crate::util::status_result(status, out_error)
     }
 
+    /// Wraps the corresponding `PDFPage` API.
     #[must_use]
     pub fn document(&self) -> Option<crate::document::PdfDocument> {
         let ptr = unsafe { ffi::pdf_page_document(self.handle.as_ptr()) };
@@ -130,17 +141,20 @@ impl PdfPage {
             .map(crate::document::PdfDocument::from_handle)
     }
 
+    /// Wraps the corresponding `PDFPage` API.
     #[must_use]
     pub fn annotation_count(&self) -> usize {
         unsafe { ffi::pdf_page_annotation_count(self.handle.as_ptr()) as usize }
     }
 
+    /// Wraps the corresponding `PDFPage` API.
     #[must_use]
     pub fn annotation(&self, index: usize) -> Option<PdfAnnotation> {
         let ptr = unsafe { ffi::pdf_page_annotation_at(self.handle.as_ptr(), index as u64) };
         unsafe { ObjectHandle::from_retained_ptr(ptr) }.map(PdfAnnotation::from_handle)
     }
 
+    /// Wraps the corresponding `PDFPage` API.
     #[must_use]
     pub fn annotations(&self) -> Vec<PdfAnnotation> {
         (0..self.annotation_count())
@@ -148,6 +162,7 @@ impl PdfPage {
             .collect()
     }
 
+    /// Wraps the corresponding `PDFPage` API.
     pub fn add_annotation(&self, annotation: &PdfAnnotation) -> Result<()> {
         let mut out_error = ptr::null_mut();
         let status = unsafe {
@@ -160,6 +175,7 @@ impl PdfPage {
         crate::util::status_result(status, out_error)
     }
 
+    /// Wraps the corresponding `PDFPage` API.
     pub fn remove_annotation(&self, annotation: &PdfAnnotation) -> Result<()> {
         let mut out_error = ptr::null_mut();
         let status = unsafe {
@@ -172,6 +188,7 @@ impl PdfPage {
         crate::util::status_result(status, out_error)
     }
 
+    /// Wraps the corresponding `PDFPage` API.
     #[must_use]
     pub fn annotation_at_point(&self, point: PdfPoint) -> Option<PdfAnnotation> {
         let ptr =
@@ -179,6 +196,7 @@ impl PdfPage {
         unsafe { ObjectHandle::from_retained_ptr(ptr) }.map(PdfAnnotation::from_handle)
     }
 
+    /// Wraps the corresponding `PDFPage` API.
     #[must_use]
     pub fn selection_for_range(&self, location: usize, length: usize) -> Option<PdfSelection> {
         let ptr = unsafe {
@@ -187,6 +205,7 @@ impl PdfPage {
         unsafe { ObjectHandle::from_retained_ptr(ptr) }.map(PdfSelection::from_handle)
     }
 
+    /// Wraps the corresponding `PDFPage` API.
     #[must_use]
     pub fn selection_for_rect(&self, rect: PdfRect) -> Option<PdfSelection> {
         let ptr = unsafe {
@@ -201,6 +220,7 @@ impl PdfPage {
         unsafe { ObjectHandle::from_retained_ptr(ptr) }.map(PdfSelection::from_handle)
     }
 
+    /// Wraps the corresponding `PDFPage` API.
     #[must_use]
     pub fn selection_for_word_at_point(&self, point: PdfPoint) -> Option<PdfSelection> {
         let ptr = unsafe {
@@ -209,6 +229,7 @@ impl PdfPage {
         unsafe { ObjectHandle::from_retained_ptr(ptr) }.map(PdfSelection::from_handle)
     }
 
+    /// Wraps the corresponding `PDFPage` API.
     #[must_use]
     pub fn selection_for_line_at_point(&self, point: PdfPoint) -> Option<PdfSelection> {
         let ptr = unsafe {
@@ -217,6 +238,7 @@ impl PdfPage {
         unsafe { ObjectHandle::from_retained_ptr(ptr) }.map(PdfSelection::from_handle)
     }
 
+    /// Wraps the corresponding `PDFPage` API.
     #[must_use]
     pub fn selection_from_points(&self, start: PdfPoint, end: PdfPoint) -> Option<PdfSelection> {
         let ptr = unsafe {
@@ -231,6 +253,7 @@ impl PdfPage {
         unsafe { ObjectHandle::from_retained_ptr(ptr) }.map(PdfSelection::from_handle)
     }
 
+    /// Wraps the corresponding `PDFPage` API.
     #[must_use]
     pub fn character_bounds_at(&self, index: usize) -> PdfRect {
         let mut x = 0.0_f64;
@@ -255,6 +278,7 @@ impl PdfPage {
         }
     }
 
+    /// Wraps the corresponding `PDFPage` API.
     #[must_use]
     pub fn character_index_at_point(&self, point: PdfPoint) -> Option<usize> {
         let index = unsafe {
@@ -265,11 +289,13 @@ impl PdfPage {
             .and_then(|index| usize::try_from(index).ok())
     }
 
+    /// Wraps the corresponding `PDFPage` API.
     #[must_use]
     pub fn displays_annotations(&self) -> bool {
         unsafe { ffi::pdf_page_displays_annotations(self.handle.as_ptr()) != 0 }
     }
 
+    /// Wraps the corresponding `PDFPage` API.
     pub fn set_displays_annotations(&self, value: bool) {
         unsafe { ffi::pdf_page_set_displays_annotations(self.handle.as_ptr(), i32::from(value)) };
     }

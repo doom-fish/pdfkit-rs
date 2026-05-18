@@ -10,15 +10,20 @@ use crate::handle::ObjectHandle;
 use crate::notifications::PdfDocumentNotification;
 use crate::selection::PdfSelection;
 
+/// Mirrors the `PDFDocumentDelegate` callback surface.
 pub trait PdfDocumentDelegate: 'static {
+    /// Mirrors the corresponding `PDFDocumentDelegate` callback.
     fn handle_notification(&mut self, _notification: PdfDocumentNotification) {}
 
+    /// Mirrors the corresponding `PDFDocumentDelegate` callback.
     fn did_match_string(&mut self, _instance: PdfSelection) {}
 
+    /// Mirrors the corresponding `PDFDocumentDelegate` callback.
     fn page_class_name(&mut self) -> Option<String> {
         None
     }
 
+    /// Mirrors the corresponding `PDFDocumentDelegate` callback.
     fn annotation_class_name(&mut self, _annotation_type: &str) -> Option<String> {
         None
     }
@@ -28,12 +33,14 @@ struct DelegateState {
     delegate: Box<dyn PdfDocumentDelegate>,
 }
 
+/// Wraps `PDFDocumentDelegateHandle`.
 pub struct PdfDocumentDelegateHandle {
     handle: ObjectHandle,
     _state: Box<DelegateState>,
 }
 
 impl PdfDocumentDelegateHandle {
+    /// Registers a Rust implementation of `PDFDocumentDelegate`.
     pub fn new(delegate: impl PdfDocumentDelegate) -> Result<Self> {
         let mut state = Box::new(DelegateState {
             delegate: Box::new(delegate),

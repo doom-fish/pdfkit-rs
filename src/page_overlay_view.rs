@@ -6,6 +6,7 @@ use crate::ffi;
 use crate::handle::ObjectHandle;
 use crate::types::PdfSize;
 
+/// Wraps `PDFPageOverlayView`.
 #[derive(Debug, Clone)]
 pub struct PdfPageOverlayView {
     handle: ObjectHandle,
@@ -16,6 +17,7 @@ impl PdfPageOverlayView {
         Self { handle }
     }
 
+    /// Wraps the corresponding `PDFPageOverlayView` API.
     pub fn new(size: PdfSize) -> Result<Self> {
         let mut out_view = ptr::null_mut();
         let mut out_error = ptr::null_mut();

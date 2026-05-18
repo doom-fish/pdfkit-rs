@@ -14,6 +14,7 @@ use crate::types::{
 };
 use crate::util::{c_string, parse_json, path_to_c_string, required_handle, take_string};
 
+/// Wraps `PDFDocument`.
 #[derive(Debug, Clone)]
 pub struct PdfDocument {
     handle: ObjectHandle,
@@ -24,6 +25,7 @@ impl PdfDocument {
         Self { handle }
     }
 
+    /// Wraps `PDFDocument()`.
     pub fn new() -> Result<Self> {
         let mut out_document = ptr::null_mut();
         let mut out_error = ptr::null_mut();
@@ -35,6 +37,7 @@ impl PdfDocument {
         )?))
     }
 
+    /// Wraps `PDFDocument(url:)`.
     pub fn from_url(path: impl AsRef<Path>) -> Result<Self> {
         let path = path_to_c_string(path.as_ref())?;
         let mut out_document = ptr::null_mut();
@@ -49,6 +52,7 @@ impl PdfDocument {
         )?))
     }
 
+    /// Wraps `PDFDocument(data:)`.
     pub fn from_bytes(bytes: &[u8]) -> Result<Self> {
         let mut out_document = ptr::null_mut();
         let mut out_error = ptr::null_mut();
@@ -67,6 +71,7 @@ impl PdfDocument {
         )?))
     }
 
+    /// Wraps the corresponding `PDFDocument` API.
     pub fn info(&self) -> Result<PdfDocumentInfo> {
         parse_json(
             unsafe { ffi::pdf_document_info_json(self.handle.as_ptr()) },
@@ -74,6 +79,7 @@ impl PdfDocument {
         )
     }
 
+    /// Wraps the corresponding `PDFDocument` API.
     pub fn attributes(&self) -> Result<PdfDocumentAttributes> {
         parse_json(
             unsafe { ffi::pdf_document_attributes_json(self.handle.as_ptr()) },
@@ -81,22 +87,26 @@ impl PdfDocument {
         )
     }
 
+    /// Wraps the corresponding `PDFDocument` API.
     #[must_use]
     pub fn string(&self) -> Option<String> {
         take_string(unsafe { ffi::pdf_document_string(self.handle.as_ptr()) })
     }
 
+    /// Wraps the corresponding `PDFDocument` API.
     #[must_use]
     pub fn page_count(&self) -> usize {
         unsafe { ffi::pdf_document_page_count(self.handle.as_ptr()) as usize }
     }
 
+    /// Wraps the corresponding `PDFDocument` API.
     #[must_use]
     pub fn page(&self, index: usize) -> Option<PdfPage> {
         let ptr = unsafe { ffi::pdf_document_page_at(self.handle.as_ptr(), index as u64) };
         unsafe { ObjectHandle::from_retained_ptr(ptr) }.map(PdfPage::from_handle)
     }
 
+    /// Wraps the corresponding `PDFDocument` API.
     #[must_use]
     pub fn pages(&self) -> Vec<PdfPage> {
         (0..self.page_count())
@@ -104,6 +114,7 @@ impl PdfDocument {
             .collect()
     }
 
+    /// Wraps the corresponding `PDFDocument` API.
     #[must_use]
     pub fn page_index(&self, page: &PdfPage) -> Option<usize> {
         let index =
@@ -111,12 +122,14 @@ impl PdfDocument {
         (index != u64::MAX).then_some(index as usize)
     }
 
+    /// Wraps the corresponding `PDFDocument` API.
     #[must_use]
     pub fn outline_root(&self) -> Option<PdfOutline> {
         let ptr = unsafe { ffi::pdf_document_outline_root(self.handle.as_ptr()) };
         unsafe { ObjectHandle::from_retained_ptr(ptr) }.map(PdfOutline::from_handle)
     }
 
+    /// Wraps the corresponding `PDFDocument` API.
     pub fn set_outline_root(&self, outline: Option<&PdfOutline>) -> Result<()> {
         let mut out_error = ptr::null_mut();
         let status = unsafe {
@@ -129,6 +142,7 @@ impl PdfDocument {
         crate::util::status_result(status, out_error)
     }
 
+    /// Wraps the corresponding `PDFDocument` API.
     #[must_use]
     pub fn outline_item_for_selection(&self, selection: &PdfSelection) -> Option<PdfOutline> {
         let ptr = unsafe {
@@ -140,12 +154,14 @@ impl PdfDocument {
         unsafe { ObjectHandle::from_retained_ptr(ptr) }.map(PdfOutline::from_handle)
     }
 
+    /// Wraps the corresponding `PDFDocument` API.
     #[must_use]
     pub fn selection_for_entire_document(&self) -> Option<PdfSelection> {
         let ptr = unsafe { ffi::pdf_document_selection_for_entire_document(self.handle.as_ptr()) };
         unsafe { ObjectHandle::from_retained_ptr(ptr) }.map(PdfSelection::from_handle)
     }
 
+    /// Wraps the corresponding `PDFDocument` API.
     #[must_use]
     pub fn selection_from_page_points(
         &self,
@@ -168,6 +184,7 @@ impl PdfDocument {
         unsafe { ObjectHandle::from_retained_ptr(ptr) }.map(PdfSelection::from_handle)
     }
 
+    /// Wraps the corresponding `PDFDocument` API.
     #[must_use]
     pub fn selection_from_page_points_with_granularity(
         &self,
@@ -192,6 +209,7 @@ impl PdfDocument {
         unsafe { ObjectHandle::from_retained_ptr(ptr) }.map(PdfSelection::from_handle)
     }
 
+    /// Wraps the corresponding `PDFDocument` API.
     #[must_use]
     pub fn selection_from_page_characters(
         &self,
@@ -212,11 +230,13 @@ impl PdfDocument {
         unsafe { ObjectHandle::from_retained_ptr(ptr) }.map(PdfSelection::from_handle)
     }
 
+    /// Wraps the corresponding `PDFDocument` API.
     pub fn unlock(&self, password: &str) -> Result<bool> {
         let password = c_string(password)?;
         Ok(unsafe { ffi::pdf_document_unlock(self.handle.as_ptr(), password.as_ptr()) != 0 })
     }
 
+    /// Wraps the corresponding `PDFDocument` API.
     pub fn set_delegate(&self, delegate: Option<&PdfDocumentDelegateHandle>) -> Result<()> {
         let mut out_error = ptr::null_mut();
         let status = unsafe {
@@ -229,6 +249,7 @@ impl PdfDocument {
         crate::util::status_result(status, out_error)
     }
 
+    /// Wraps the corresponding `PDFDocument` API.
     pub fn write_to_url(&self, path: impl AsRef<Path>) -> Result<()> {
         let path = path_to_c_string(path.as_ref())?;
         let mut out_error = ptr::null_mut();
@@ -238,6 +259,7 @@ impl PdfDocument {
         crate::util::status_result(status, out_error)
     }
 
+    /// Wraps the corresponding `PDFDocument` API.
     pub fn write_to_url_with_options(
         &self,
         path: impl AsRef<Path>,
@@ -263,6 +285,7 @@ impl PdfDocument {
         crate::util::status_result(status, out_error)
     }
 
+    /// Wraps the corresponding `PDFDocument` API.
     pub fn insert_page(&self, page: &PdfPage, index: usize) -> Result<()> {
         let mut out_error = ptr::null_mut();
         let status = unsafe {
@@ -276,6 +299,7 @@ impl PdfDocument {
         crate::util::status_result(status, out_error)
     }
 
+    /// Wraps the corresponding `PDFDocument` API.
     pub fn remove_page(&self, index: usize) -> Result<()> {
         let mut out_error = ptr::null_mut();
         let status = unsafe {
@@ -284,6 +308,7 @@ impl PdfDocument {
         crate::util::status_result(status, out_error)
     }
 
+    /// Wraps the corresponding `PDFDocument` API.
     pub fn exchange_pages(&self, index_a: usize, index_b: usize) -> Result<()> {
         let mut out_error = ptr::null_mut();
         let status = unsafe {

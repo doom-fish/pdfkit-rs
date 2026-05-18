@@ -8,6 +8,7 @@ use crate::types::{PdfSize, PdfThumbnailViewInfo};
 use crate::util::parse_json;
 use crate::view::PdfView;
 
+/// Wraps `PDFThumbnailView`.
 #[derive(Debug, Clone)]
 pub struct PdfThumbnailView {
     handle: ObjectHandle,
@@ -18,6 +19,7 @@ impl PdfThumbnailView {
         Self { handle }
     }
 
+    /// Wraps `PDFThumbnailView(frame:)`.
     pub fn new(size: PdfSize) -> Result<Self> {
         let mut out_view = ptr::null_mut();
         let mut out_error = ptr::null_mut();
@@ -31,6 +33,7 @@ impl PdfThumbnailView {
         )?))
     }
 
+    /// Wraps the corresponding `PDFThumbnailView` API.
     pub fn info(&self) -> Result<PdfThumbnailViewInfo> {
         parse_json(
             unsafe { ffi::pdf_thumbnail_view_info_json(self.handle.as_ptr()) },
@@ -38,12 +41,14 @@ impl PdfThumbnailView {
         )
     }
 
+    /// Wraps the corresponding `PDFThumbnailView` API.
     #[must_use]
     pub fn pdf_view(&self) -> Option<PdfView> {
         let ptr = unsafe { ffi::pdf_thumbnail_view_pdf_view(self.handle.as_ptr()) };
         unsafe { ObjectHandle::from_retained_ptr(ptr) }.map(PdfView::from_handle)
     }
 
+    /// Wraps the corresponding `PDFThumbnailView` API.
     pub fn set_pdf_view(&self, pdf_view: Option<&PdfView>) -> Result<()> {
         let mut out_error = ptr::null_mut();
         let status = unsafe {
@@ -56,6 +61,7 @@ impl PdfThumbnailView {
         crate::util::status_result(status, out_error)
     }
 
+    /// Wraps the corresponding `PDFThumbnailView` API.
     pub fn set_thumbnail_size(&self, size: PdfSize) {
         unsafe {
             ffi::pdf_thumbnail_view_set_thumbnail_size(
@@ -66,6 +72,7 @@ impl PdfThumbnailView {
         };
     }
 
+    /// Wraps the corresponding `PDFThumbnailView` API.
     pub fn set_maximum_number_of_columns(&self, value: usize) {
         unsafe {
             ffi::pdf_thumbnail_view_set_maximum_number_of_columns(
@@ -75,12 +82,14 @@ impl PdfThumbnailView {
         };
     }
 
+    /// Wraps the corresponding `PDFThumbnailView` API.
     pub fn set_allows_dragging(&self, value: bool) {
         unsafe {
             ffi::pdf_thumbnail_view_set_allows_dragging(self.handle.as_ptr(), i32::from(value));
         };
     }
 
+    /// Wraps the corresponding `PDFThumbnailView` API.
     pub fn set_allows_multiple_selection(&self, value: bool) {
         unsafe {
             ffi::pdf_thumbnail_view_set_allows_multiple_selection(
@@ -90,11 +99,13 @@ impl PdfThumbnailView {
         };
     }
 
+    /// Wraps the corresponding `PDFThumbnailView` API.
     #[must_use]
     pub fn selected_page_count(&self) -> usize {
         unsafe { ffi::pdf_thumbnail_view_selected_page_count(self.handle.as_ptr()) as usize }
     }
 
+    /// Wraps the corresponding `PDFThumbnailView` API.
     #[must_use]
     pub fn selected_page(&self, index: usize) -> Option<PdfPage> {
         let ptr =
@@ -102,6 +113,7 @@ impl PdfThumbnailView {
         unsafe { ObjectHandle::from_retained_ptr(ptr) }.map(PdfPage::from_handle)
     }
 
+    /// Wraps the corresponding `PDFThumbnailView` API.
     #[must_use]
     pub fn selected_pages(&self) -> Vec<PdfPage> {
         (0..self.selected_page_count())

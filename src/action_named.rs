@@ -7,6 +7,7 @@ use crate::handle::ObjectHandle;
 use crate::types::PdfActionNamedName;
 use crate::util::take_string;
 
+/// Wraps `PDFActionNamed`.
 #[derive(Debug, Clone)]
 pub struct PdfActionNamed {
     handle: ObjectHandle,
@@ -17,6 +18,7 @@ impl PdfActionNamed {
         Self { handle }
     }
 
+    /// Wraps `PDFActionNamed(name:)`.
     pub fn new(name: PdfActionNamedName) -> Result<Self> {
         let mut out_action = ptr::null_mut();
         let mut out_error = ptr::null_mut();
@@ -29,6 +31,7 @@ impl PdfActionNamed {
         )?))
     }
 
+    /// Returns the corresponding PDFKit constant name.
     #[must_use]
     pub fn name(&self) -> Option<PdfActionNamedName> {
         PdfActionNamedName::from_raw(unsafe {
@@ -36,6 +39,7 @@ impl PdfActionNamed {
         })
     }
 
+    /// Wraps the corresponding `PDFActionNamed` API.
     pub fn set_name(&self, name: PdfActionNamedName) -> Result<()> {
         let mut out_error = ptr::null_mut();
         let status = unsafe {
@@ -44,6 +48,7 @@ impl PdfActionNamed {
         crate::util::status_result(status, out_error)
     }
 
+    /// Wraps the corresponding `PDFActionNamed` API.
     #[must_use]
     pub fn action_type(&self) -> Option<String> {
         take_string(unsafe { ffi::pdf_action_named_type_string(self.handle.as_ptr()) })

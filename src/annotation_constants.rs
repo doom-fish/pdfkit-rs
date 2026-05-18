@@ -3,12 +3,17 @@ use crate::types::{PdfLineStyle, PdfTextAnnotationIconType};
 macro_rules! pdf_string_enum {
     ($(#[$meta:meta])* pub enum $name:ident { $($variant:ident => $raw:literal),+ $(,)? }) => {
         $(#[$meta])*
+        #[doc = concat!("Wraps `", stringify!($name), "` values.")]
         #[derive(Debug, Clone, Copy, PartialEq, Eq)]
         pub enum $name {
-            $($variant),+
+            $(
+                #[doc = concat!("Wraps the corresponding `", stringify!($name), "` value.")]
+                $variant
+            ),+
         }
 
         impl $name {
+            #[doc = "Returns the corresponding PDFKit string constant."]
             #[must_use]
             pub const fn name(self) -> &'static str {
                 match self {
@@ -16,6 +21,7 @@ macro_rules! pdf_string_enum {
                 }
             }
 
+            #[doc = "Parses the corresponding PDFKit string constant."]
             #[must_use]
             pub fn from_name(raw: &str) -> Option<Self> {
                 match raw {
@@ -87,6 +93,7 @@ pdf_string_enum! {
 }
 
 impl PdfAnnotationLineEndingStyle {
+    /// Converts a `PDFLineStyle`-backed value into `PDFAnnotationLineEndingStyle`.
     #[must_use]
     pub const fn from_line_style(style: PdfLineStyle) -> Self {
         match style {
@@ -99,6 +106,7 @@ impl PdfAnnotationLineEndingStyle {
         }
     }
 
+    /// Converts this value back to the corresponding `PDFLineStyle` case.
     #[must_use]
     pub const fn line_style(self) -> PdfLineStyle {
         match self {
@@ -143,6 +151,7 @@ pdf_string_enum! {
 }
 
 impl PdfAnnotationTextIconName {
+    /// Converts a `PDFTextAnnotationIconType`-backed value into `PDFAnnotationTextIconName`.
     #[must_use]
     pub const fn from_icon_type(icon_type: PdfTextAnnotationIconType) -> Self {
         match icon_type {
@@ -156,6 +165,7 @@ impl PdfAnnotationTextIconName {
         }
     }
 
+    /// Converts this value back to the corresponding `PDFTextAnnotationIconType` case.
     #[must_use]
     pub const fn icon_type(self) -> PdfTextAnnotationIconType {
         match self {

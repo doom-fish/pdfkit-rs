@@ -6,6 +6,7 @@ use crate::handle::ObjectHandle;
 use crate::types::{PdfAppearanceCharacteristicsInfo, PdfColor, PdfWidgetControlType};
 use crate::util::{option_c_string, parse_json};
 
+/// Wraps `PDFAppearanceCharacteristics`.
 #[derive(Debug, Clone)]
 pub struct PdfAppearanceCharacteristics {
     handle: ObjectHandle,
@@ -16,6 +17,7 @@ impl PdfAppearanceCharacteristics {
         Self { handle }
     }
 
+    /// Wraps the corresponding `PDFAppearanceCharacteristics` API.
     pub fn new() -> Result<Self> {
         let mut out_value = ptr::null_mut();
         let mut out_error = ptr::null_mut();
@@ -28,6 +30,7 @@ impl PdfAppearanceCharacteristics {
         )?))
     }
 
+    /// Wraps the corresponding `PDFAppearanceCharacteristics` API.
     pub fn info(&self) -> Result<PdfAppearanceCharacteristicsInfo> {
         parse_json(
             unsafe { ffi::pdf_appearance_characteristics_info_json(self.handle.as_ptr()) },
@@ -35,6 +38,7 @@ impl PdfAppearanceCharacteristics {
         )
     }
 
+    /// Wraps the corresponding `PDFAppearanceCharacteristics` API.
     pub fn set_control_type(&self, control_type: PdfWidgetControlType) -> Result<()> {
         let mut out_error = ptr::null_mut();
         let status = unsafe {
@@ -47,10 +51,12 @@ impl PdfAppearanceCharacteristics {
         crate::util::status_result(status, out_error)
     }
 
+    /// Wraps the corresponding `PDFAppearanceCharacteristics` API.
     pub fn set_rotation(&self, rotation: i32) {
         unsafe { ffi::pdf_appearance_characteristics_set_rotation(self.handle.as_ptr(), rotation) };
     }
 
+    /// Wraps the corresponding `PDFAppearanceCharacteristics` API.
     pub fn set_caption(&self, caption: Option<&str>) -> Result<()> {
         let caption = option_c_string(caption)?;
         unsafe {
@@ -62,6 +68,7 @@ impl PdfAppearanceCharacteristics {
         Ok(())
     }
 
+    /// Wraps the corresponding `PDFAppearanceCharacteristics` API.
     pub fn set_rollover_caption(&self, caption: Option<&str>) -> Result<()> {
         let caption = option_c_string(caption)?;
         unsafe {
@@ -73,6 +80,7 @@ impl PdfAppearanceCharacteristics {
         Ok(())
     }
 
+    /// Wraps the corresponding `PDFAppearanceCharacteristics` API.
     pub fn set_down_caption(&self, caption: Option<&str>) -> Result<()> {
         let caption = option_c_string(caption)?;
         unsafe {
@@ -84,6 +92,7 @@ impl PdfAppearanceCharacteristics {
         Ok(())
     }
 
+    /// Wraps the corresponding `PDFAppearanceCharacteristics` API.
     pub fn set_background_color(&self, color: PdfColor) {
         unsafe {
             ffi::pdf_appearance_characteristics_set_background_color(
@@ -96,6 +105,7 @@ impl PdfAppearanceCharacteristics {
         };
     }
 
+    /// Wraps the corresponding `PDFAppearanceCharacteristics` API.
     pub fn set_border_color(&self, color: PdfColor) {
         unsafe {
             ffi::pdf_appearance_characteristics_set_border_color(

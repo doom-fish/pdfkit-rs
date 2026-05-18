@@ -1,8 +1,10 @@
 use std::error::Error;
 use std::fmt;
 
+/// Result alias used by the PDFKit wrappers.
 pub type Result<T> = std::result::Result<T, PdfKitError>;
 
+/// Wraps `PDFKitError`.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PdfKitError {
     code: i32,
@@ -17,11 +19,13 @@ impl PdfKitError {
         }
     }
 
+    /// Returns the PDFKit framework status code.
     #[must_use]
     pub fn code(&self) -> i32 {
         self.code
     }
 
+    /// Returns the PDFKit framework error message.
     #[must_use]
     pub fn message(&self) -> &str {
         &self.message

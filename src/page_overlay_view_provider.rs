@@ -10,7 +10,9 @@ use crate::page::PdfPage;
 use crate::page_overlay_view::PdfPageOverlayView;
 use crate::view::PdfView;
 
+/// Mirrors the `PDFPageOverlayViewProvider` callback surface.
 pub trait PdfPageOverlayViewProvider: 'static {
+    /// Mirrors the corresponding `PDFPageOverlayViewProvider` callback.
     fn overlay_view_for_page(
         &mut self,
         _view: PdfView,
@@ -19,6 +21,7 @@ pub trait PdfPageOverlayViewProvider: 'static {
         None
     }
 
+    /// Mirrors the corresponding `PDFPageOverlayViewProvider` callback.
     fn will_display_overlay_view(
         &mut self,
         _view: PdfView,
@@ -27,6 +30,7 @@ pub trait PdfPageOverlayViewProvider: 'static {
     ) {
     }
 
+    /// Mirrors the corresponding `PDFPageOverlayViewProvider` callback.
     fn will_end_displaying_overlay_view(
         &mut self,
         _view: PdfView,
@@ -40,12 +44,14 @@ struct ProviderState {
     provider: Box<dyn PdfPageOverlayViewProvider>,
 }
 
+/// Wraps `PDFPageOverlayViewProviderHandle`.
 pub struct PdfPageOverlayViewProviderHandle {
     handle: ObjectHandle,
     _state: Box<ProviderState>,
 }
 
 impl PdfPageOverlayViewProviderHandle {
+    /// Registers a Rust implementation of `PDFPageOverlayViewProvider`.
     pub fn new(provider: impl PdfPageOverlayViewProvider) -> Result<Self> {
         let mut state = Box::new(ProviderState {
             provider: Box::new(provider),

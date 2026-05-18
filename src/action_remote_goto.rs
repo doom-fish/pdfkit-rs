@@ -7,6 +7,7 @@ use crate::handle::ObjectHandle;
 use crate::types::PdfPoint;
 use crate::util::{c_string, take_string};
 
+/// Wraps `PDFActionRemoteGoTo`.
 #[derive(Debug, Clone)]
 pub struct PdfActionRemoteGoTo {
     handle: ObjectHandle,
@@ -17,6 +18,7 @@ impl PdfActionRemoteGoTo {
         Self { handle }
     }
 
+    /// Wraps `PDFActionRemoteGoTo(pageIndex:at:fileURL:)`.
     pub fn new(page_index: usize, point: PdfPoint, url: &str) -> Result<Self> {
         let url = c_string(url)?;
         let mut out_action = ptr::null_mut();
@@ -38,17 +40,20 @@ impl PdfActionRemoteGoTo {
         )?))
     }
 
+    /// Wraps the corresponding `PDFActionRemoteGoTo` API.
     #[must_use]
     pub fn page_index(&self) -> usize {
         unsafe { ffi::pdf_action_remote_goto_page_index(self.handle.as_ptr()) as usize }
     }
 
+    /// Wraps the corresponding `PDFActionRemoteGoTo` API.
     pub fn set_page_index(&self, page_index: usize) {
         unsafe {
             ffi::pdf_action_remote_goto_set_page_index(self.handle.as_ptr(), page_index as u64);
         };
     }
 
+    /// Wraps the corresponding `PDFActionRemoteGoTo` API.
     #[must_use]
     pub fn point(&self) -> PdfPoint {
         PdfPoint {
@@ -57,15 +62,18 @@ impl PdfActionRemoteGoTo {
         }
     }
 
+    /// Wraps the corresponding `PDFActionRemoteGoTo` API.
     pub fn set_point(&self, point: PdfPoint) {
         unsafe { ffi::pdf_action_remote_goto_set_point(self.handle.as_ptr(), point.x, point.y) };
     }
 
+    /// Wraps the corresponding `PDFActionRemoteGoTo` API.
     #[must_use]
     pub fn url(&self) -> Option<String> {
         take_string(unsafe { ffi::pdf_action_remote_goto_url_string(self.handle.as_ptr()) })
     }
 
+    /// Wraps the corresponding `PDFActionRemoteGoTo` API.
     pub fn set_url(&self, url: &str) -> Result<()> {
         let url = c_string(url)?;
         let mut out_error = ptr::null_mut();
@@ -75,6 +83,7 @@ impl PdfActionRemoteGoTo {
         crate::util::status_result(status, out_error)
     }
 
+    /// Wraps the corresponding `PDFActionRemoteGoTo` API.
     #[must_use]
     pub fn action_type(&self) -> Option<String> {
         take_string(unsafe { ffi::pdf_action_remote_goto_type_string(self.handle.as_ptr()) })

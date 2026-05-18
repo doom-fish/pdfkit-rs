@@ -6,6 +6,7 @@ use crate::ffi;
 use crate::handle::ObjectHandle;
 use crate::util::{c_string, parse_json, take_string};
 
+/// Wraps `PDFActionResetForm`.
 #[derive(Debug, Clone)]
 pub struct PdfActionResetForm {
     handle: ObjectHandle,
@@ -16,6 +17,7 @@ impl PdfActionResetForm {
         Self { handle }
     }
 
+    /// Wraps `PDFActionResetForm()`.
     pub fn new() -> Result<Self> {
         let mut out_action = ptr::null_mut();
         let mut out_error = ptr::null_mut();
@@ -27,6 +29,7 @@ impl PdfActionResetForm {
         )?))
     }
 
+    /// Wraps the corresponding `PDFActionResetForm` API.
     pub fn fields(&self) -> Result<Vec<String>> {
         parse_json(
             unsafe { ffi::pdf_action_reset_form_fields_json(self.handle.as_ptr()) },
@@ -34,6 +37,7 @@ impl PdfActionResetForm {
         )
     }
 
+    /// Wraps the corresponding `PDFActionResetForm` API.
     pub fn set_fields<I, S>(&self, fields: I) -> Result<()>
     where
         I: IntoIterator<Item = S>,
@@ -61,6 +65,7 @@ impl PdfActionResetForm {
         crate::util::status_result(status, out_error)
     }
 
+    /// Wraps the corresponding `PDFActionResetForm` API.
     pub fn clear_fields(&self) -> Result<()> {
         let mut out_error = ptr::null_mut();
         let status = unsafe {
@@ -73,11 +78,13 @@ impl PdfActionResetForm {
         crate::util::status_result(status, out_error)
     }
 
+    /// Wraps the corresponding `PDFActionResetForm` API.
     #[must_use]
     pub fn fields_included_are_cleared(&self) -> bool {
         unsafe { ffi::pdf_action_reset_form_fields_included_are_cleared(self.handle.as_ptr()) != 0 }
     }
 
+    /// Wraps the corresponding `PDFActionResetForm` API.
     pub fn set_fields_included_are_cleared(&self, value: bool) {
         unsafe {
             ffi::pdf_action_reset_form_set_fields_included_are_cleared(
@@ -87,6 +94,7 @@ impl PdfActionResetForm {
         }
     }
 
+    /// Wraps the corresponding `PDFActionResetForm` API.
     #[must_use]
     pub fn action_type(&self) -> Option<String> {
         take_string(unsafe { ffi::pdf_action_reset_form_type_string(self.handle.as_ptr()) })

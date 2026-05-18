@@ -7,6 +7,7 @@ use crate::ffi;
 use crate::handle::ObjectHandle;
 use crate::util::take_string;
 
+/// Wraps `PDFActionGoTo`.
 #[derive(Debug, Clone)]
 pub struct PdfActionGoTo {
     handle: ObjectHandle,
@@ -17,6 +18,7 @@ impl PdfActionGoTo {
         Self { handle }
     }
 
+    /// Wraps `PDFActionGoTo(destination:)`.
     pub fn new(destination: &PdfDestination) -> Result<Self> {
         let mut out_action = ptr::null_mut();
         let mut out_error = ptr::null_mut();
@@ -30,12 +32,14 @@ impl PdfActionGoTo {
         )?))
     }
 
+    /// Wraps the corresponding `PDFActionGoTo` API.
     #[must_use]
     pub fn destination(&self) -> Option<PdfDestination> {
         let ptr = unsafe { ffi::pdf_action_goto_destination(self.handle.as_ptr()) };
         unsafe { ObjectHandle::from_retained_ptr(ptr) }.map(PdfDestination::from_handle)
     }
 
+    /// Wraps the corresponding `PDFActionGoTo` API.
     pub fn set_destination(&self, destination: &PdfDestination) -> Result<()> {
         let mut out_error = ptr::null_mut();
         let status = unsafe {
@@ -48,6 +52,7 @@ impl PdfActionGoTo {
         crate::util::status_result(status, out_error)
     }
 
+    /// Wraps the corresponding `PDFActionGoTo` API.
     #[must_use]
     pub fn action_type(&self) -> Option<String> {
         take_string(unsafe { ffi::pdf_action_goto_type_string(self.handle.as_ptr()) })

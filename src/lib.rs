@@ -92,6 +92,7 @@ pub use types::{
 pub use view::PdfView;
 pub use view_delegate::{PdfViewDelegate, PdfViewDelegateHandle};
 
+/// Re-exports the primary PDFKit wrapper types.
 pub mod prelude {
     pub use crate::{
         DisplayBox, PdfAccessibilityNode, PdfAction, PdfActionGoTo, PdfActionNamed,

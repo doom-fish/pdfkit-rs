@@ -6,6 +6,7 @@ use crate::ffi;
 use crate::handle::ObjectHandle;
 use crate::util::{c_string, take_string};
 
+/// Wraps `PDFActionURL`.
 #[derive(Debug, Clone)]
 pub struct PdfActionUrl {
     handle: ObjectHandle,
@@ -16,6 +17,7 @@ impl PdfActionUrl {
         Self { handle }
     }
 
+    /// Wraps `PDFActionURL(url:)`.
     pub fn new(url: &str) -> Result<Self> {
         let url = c_string(url)?;
         let mut out_action = ptr::null_mut();
@@ -29,11 +31,13 @@ impl PdfActionUrl {
         )?))
     }
 
+    /// Wraps the corresponding `PDFActionURL` API.
     #[must_use]
     pub fn url(&self) -> Option<String> {
         take_string(unsafe { ffi::pdf_action_url_string(self.handle.as_ptr()) })
     }
 
+    /// Wraps the corresponding `PDFActionURL` API.
     pub fn set_url(&self, url: &str) -> Result<()> {
         let url = c_string(url)?;
         let mut out_error = ptr::null_mut();
@@ -43,6 +47,7 @@ impl PdfActionUrl {
         crate::util::status_result(status, out_error)
     }
 
+    /// Wraps the corresponding `PDFActionURL` API.
     #[must_use]
     pub fn action_type(&self) -> Option<String> {
         take_string(unsafe { ffi::pdf_action_url_type_string(self.handle.as_ptr()) })

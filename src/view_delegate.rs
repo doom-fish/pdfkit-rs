@@ -10,31 +10,39 @@ use crate::ffi;
 use crate::handle::ObjectHandle;
 use crate::view::PdfView;
 
+/// Mirrors the `PDFViewDelegate` callback surface.
 pub trait PdfViewDelegate: 'static {
+    /// Mirrors the corresponding `PDFViewDelegate` callback.
     fn handle_link_click(&mut self, _view: PdfView, _url: &str) -> bool {
         false
     }
 
+    /// Mirrors the corresponding `PDFViewDelegate` callback.
     fn will_change_scale_factor(&mut self, _view: PdfView, scale_factor: f64) -> f64 {
         scale_factor.clamp(0.1, 10.0)
     }
 
+    /// Mirrors the corresponding `PDFViewDelegate` callback.
     fn print_job_title(&mut self, _view: PdfView) -> Option<String> {
         None
     }
 
+    /// Mirrors the corresponding `PDFViewDelegate` callback.
     fn perform_print(&mut self, _view: PdfView) -> bool {
         false
     }
 
+    /// Mirrors the corresponding `PDFViewDelegate` callback.
     fn perform_find(&mut self, _view: PdfView) -> bool {
         false
     }
 
+    /// Mirrors the corresponding `PDFViewDelegate` callback.
     fn perform_go_to_page(&mut self, _view: PdfView) -> bool {
         false
     }
 
+    /// Mirrors the corresponding `PDFViewDelegate` callback.
     fn open_pdf_for_remote_goto_action(
         &mut self,
         _view: PdfView,
@@ -48,12 +56,14 @@ struct DelegateState {
     delegate: Box<dyn PdfViewDelegate>,
 }
 
+/// Wraps `PDFViewDelegateHandle`.
 pub struct PdfViewDelegateHandle {
     handle: ObjectHandle,
     _state: Box<DelegateState>,
 }
 
 impl PdfViewDelegateHandle {
+    /// Registers a Rust implementation of `PDFViewDelegate`.
     pub fn new(delegate: impl PdfViewDelegate) -> Result<Self> {
         let mut state = Box::new(DelegateState {
             delegate: Box::new(delegate),
@@ -145,12 +155,10 @@ unsafe extern "C" fn pdf_view_delegate_link_click_trampoline(
         let Some(view) = (unsafe { retained_view(view_handle) }) else {
             return 0;
         };
-        let Some(url) =
-            (!url.is_null()).then(|| unsafe {
-                // SAFETY: checked for null; Swift guarantees valid C string
-                CStr::from_ptr(url).to_string_lossy().into_owned()
-            })
-        else {
+        let Some(url) = (!url.is_null()).then(|| unsafe {
+            // SAFETY: checked for null; Swift guarantees valid C string
+            CStr::from_ptr(url).to_string_lossy().into_owned()
+        }) else {
             return 0;
         };
         i32::from(state.delegate.handle_link_click(view, &url))

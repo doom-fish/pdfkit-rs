@@ -11,6 +11,7 @@ use crate::handle::ObjectHandle;
 use crate::types::{PdfAnnotationInfo, PdfRect};
 use crate::util::{c_string, option_c_string, parse_json};
 
+/// Wraps `PDFAnnotation`.
 #[derive(Debug, Clone)]
 pub struct PdfAnnotation {
     handle: ObjectHandle,
@@ -21,6 +22,7 @@ impl PdfAnnotation {
         Self { handle }
     }
 
+    /// Wraps `PDFAnnotation(bounds:forType:withProperties:)`.
     pub fn new(bounds: PdfRect, annotation_type: &str) -> Result<Self> {
         let annotation_type = c_string(annotation_type)?;
         let mut out_annotation = ptr::null_mut();
@@ -43,6 +45,7 @@ impl PdfAnnotation {
         )?))
     }
 
+    /// Wraps `PDFAnnotation(bounds:forType:withProperties:)` using a typed subtype.
     pub fn new_with_subtype(
         bounds: PdfRect,
         annotation_subtype: PdfAnnotationSubtype,
@@ -68,6 +71,7 @@ impl PdfAnnotation {
         )?))
     }
 
+    /// Wraps the corresponding `PDFAnnotation` API.
     pub fn info(&self) -> Result<PdfAnnotationInfo> {
         parse_json(
             unsafe { ffi::pdf_annotation_info_json(self.handle.as_ptr()) },
@@ -75,6 +79,7 @@ impl PdfAnnotation {
         )
     }
 
+    /// Wraps the corresponding `PDFAnnotation` API.
     pub fn set_contents(&self, value: Option<&str>) -> Result<()> {
         let value = option_c_string(value)?;
         let mut out_error = ptr::null_mut();
@@ -88,16 +93,19 @@ impl PdfAnnotation {
         crate::util::status_result(status, out_error)
     }
 
+    /// Wraps the corresponding `PDFAnnotation` API.
     pub fn set_highlighted(&self, value: bool) {
         unsafe { ffi::pdf_annotation_set_highlighted(self.handle.as_ptr(), i32::from(value)) };
     }
 
+    /// Wraps the corresponding `PDFAnnotation` API.
     #[must_use]
     pub fn border(&self) -> Option<PdfBorder> {
         let ptr = unsafe { ffi::pdf_annotation_border(self.handle.as_ptr()) };
         unsafe { ObjectHandle::from_retained_ptr(ptr) }.map(PdfBorder::from_handle)
     }
 
+    /// Wraps the corresponding `PDFAnnotation` API.
     pub fn set_border(&self, border: Option<&PdfBorder>) -> Result<()> {
         let mut out_error = ptr::null_mut();
         let status = unsafe {
@@ -110,12 +118,14 @@ impl PdfAnnotation {
         crate::util::status_result(status, out_error)
     }
 
+    /// Wraps the corresponding `PDFAnnotation` API.
     #[must_use]
     pub fn action(&self) -> Option<PdfAction> {
         let ptr = unsafe { ffi::pdf_annotation_action(self.handle.as_ptr()) };
         unsafe { ObjectHandle::from_retained_ptr(ptr) }.map(PdfAction::from_handle)
     }
 
+    /// Wraps the corresponding `PDFAnnotation` API.
     pub fn set_action<A: PdfActionLike>(&self, action: Option<&A>) -> Result<()> {
         let mut out_error = ptr::null_mut();
         let status = unsafe {
@@ -128,26 +138,31 @@ impl PdfAnnotation {
         crate::util::status_result(status, out_error)
     }
 
+    /// Wraps the corresponding `PDFAnnotation` API.
     pub fn clear_action(&self) -> Result<()> {
         self.set_action::<PdfAction>(None)
     }
 
+    /// Wraps the corresponding `PDFAnnotation` API.
     #[must_use]
     pub fn action_url(&self) -> Option<PdfActionUrl> {
         let ptr = unsafe { ffi::pdf_annotation_action_url(self.handle.as_ptr()) };
         unsafe { ObjectHandle::from_retained_ptr(ptr) }.map(PdfActionUrl::from_handle)
     }
 
+    /// Wraps the corresponding `PDFAnnotation` API.
     pub fn set_action_url(&self, action: Option<&PdfActionUrl>) -> Result<()> {
         self.set_action(action)
     }
 
+    /// Wraps the corresponding `PDFAnnotation` API.
     #[must_use]
     pub fn action_goto(&self) -> Option<PdfActionGoTo> {
         let ptr = unsafe { ffi::pdf_annotation_action_goto(self.handle.as_ptr()) };
         unsafe { ObjectHandle::from_retained_ptr(ptr) }.map(PdfActionGoTo::from_handle)
     }
 
+    /// Wraps the corresponding `PDFAnnotation` API.
     pub fn set_action_goto(&self, action: Option<&PdfActionGoTo>) -> Result<()> {
         self.set_action(action)
     }

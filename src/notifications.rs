@@ -1,18 +1,30 @@
+/// Wraps `PDFDocument notification` constants.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PdfDocumentNotification {
+    /// Wraps the corresponding `PDFDocument` notification constant.
     DidUnlock,
+    /// Wraps the corresponding `PDFDocument` notification constant.
     DidBeginFind,
+    /// Wraps the corresponding `PDFDocument` notification constant.
     DidEndFind,
+    /// Wraps the corresponding `PDFDocument` notification constant.
     DidBeginPageFind,
+    /// Wraps the corresponding `PDFDocument` notification constant.
     DidEndPageFind,
+    /// Wraps the corresponding `PDFDocument` notification constant.
     DidFindMatch,
+    /// Wraps the corresponding `PDFDocument` notification constant.
     DidBeginWrite,
+    /// Wraps the corresponding `PDFDocument` notification constant.
     DidEndWrite,
+    /// Wraps the corresponding `PDFDocument` notification constant.
     DidBeginPageWrite,
+    /// Wraps the corresponding `PDFDocument` notification constant.
     DidEndPageWrite,
 }
 
 impl PdfDocumentNotification {
+    /// Returns the corresponding PDFKit constant name.
     #[must_use]
     pub const fn name(self) -> &'static str {
         match self {
@@ -46,13 +58,17 @@ impl PdfDocumentNotification {
     }
 }
 
+/// Wraps `PDFDocument notification user-info key` constants.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PdfDocumentNotificationUserInfoKey {
+    /// Wraps the corresponding `PDFDocument` user-info key.
     FoundSelection,
+    /// Wraps the corresponding `PDFDocument` user-info key.
     PageIndex,
 }
 
 impl PdfDocumentNotificationUserInfoKey {
+    /// Returns the corresponding PDFKit constant name.
     #[must_use]
     pub const fn name(self) -> &'static str {
         match self {
@@ -62,23 +78,37 @@ impl PdfDocumentNotificationUserInfoKey {
     }
 }
 
+/// Wraps `PDFView notification` constants.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PdfViewNotification {
+    /// Wraps the corresponding `PDFView` notification constant.
     AnnotationHit,
+    /// Wraps the corresponding `PDFView` notification constant.
     AnnotationWillHit,
+    /// Wraps the corresponding `PDFView` notification constant.
     ChangedHistory,
+    /// Wraps the corresponding `PDFView` notification constant.
     CopyPermission,
+    /// Wraps the corresponding `PDFView` notification constant.
     DisplayBoxChanged,
+    /// Wraps the corresponding `PDFView` notification constant.
     DisplayModeChanged,
+    /// Wraps the corresponding `PDFView` notification constant.
     DocumentChanged,
+    /// Wraps the corresponding `PDFView` notification constant.
     PageChanged,
+    /// Wraps the corresponding `PDFView` notification constant.
     PrintPermission,
+    /// Wraps the corresponding `PDFView` notification constant.
     ScaleChanged,
+    /// Wraps the corresponding `PDFView` notification constant.
     SelectionChanged,
+    /// Wraps the corresponding `PDFView` notification constant.
     VisiblePagesChanged,
 }
 
 impl PdfViewNotification {
+    /// Returns the corresponding PDFKit constant name.
     #[must_use]
     pub const fn name(self) -> &'static str {
         match self {
@@ -98,12 +128,15 @@ impl PdfViewNotification {
     }
 }
 
+/// Wraps `PDFThumbnailView notification` constants.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PdfThumbnailViewNotification {
+    /// Wraps the corresponding `PDFThumbnailView` notification constant.
     DocumentEdited,
 }
 
 impl PdfThumbnailViewNotification {
+    /// Returns the corresponding PDFKit constant name.
     #[must_use]
     pub const fn name(self) -> &'static str {
         match self {

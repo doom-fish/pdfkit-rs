@@ -15,6 +15,7 @@ use crate::types::{
 use crate::util::parse_json;
 use crate::view_delegate::PdfViewDelegateHandle;
 
+/// Wraps `PDFView`.
 #[derive(Debug, Clone)]
 pub struct PdfView {
     handle: ObjectHandle,
@@ -25,6 +26,7 @@ impl PdfView {
         Self { handle }
     }
 
+    /// Wraps `PDFView(frame:)`.
     pub fn new(size: PdfSize) -> Result<Self> {
         let mut out_view = ptr::null_mut();
         let mut out_error = ptr::null_mut();
@@ -36,6 +38,7 @@ impl PdfView {
         )?))
     }
 
+    /// Wraps the corresponding `PDFView` API.
     pub fn info(&self) -> Result<PdfViewInfo> {
         parse_json(
             unsafe { ffi::pdf_view_info_json(self.handle.as_ptr()) },
@@ -43,12 +46,14 @@ impl PdfView {
         )
     }
 
+    /// Wraps the corresponding `PDFView` API.
     #[must_use]
     pub fn document(&self) -> Option<PdfDocument> {
         let ptr = unsafe { ffi::pdf_view_document(self.handle.as_ptr()) };
         unsafe { ObjectHandle::from_retained_ptr(ptr) }.map(PdfDocument::from_handle)
     }
 
+    /// Wraps the corresponding `PDFView` API.
     pub fn set_document(&self, document: Option<&PdfDocument>) -> Result<()> {
         let mut out_error = ptr::null_mut();
         let status = unsafe {
@@ -61,6 +66,7 @@ impl PdfView {
         crate::util::status_result(status, out_error)
     }
 
+    /// Wraps the corresponding `PDFView` API.
     pub fn set_delegate(&self, delegate: Option<&PdfViewDelegateHandle>) -> Result<()> {
         let mut out_error = ptr::null_mut();
         let status = unsafe {
@@ -73,6 +79,7 @@ impl PdfView {
         crate::util::status_result(status, out_error)
     }
 
+    /// Wraps the corresponding `PDFView` API.
     pub fn set_page_overlay_view_provider(
         &self,
         provider: Option<&PdfPageOverlayViewProviderHandle>,
@@ -91,24 +98,28 @@ impl PdfView {
         crate::util::status_result(status, out_error)
     }
 
+    /// Wraps the corresponding `PDFView` API.
     #[must_use]
     pub fn current_page(&self) -> Option<PdfPage> {
         let ptr = unsafe { ffi::pdf_view_current_page(self.handle.as_ptr()) };
         unsafe { ObjectHandle::from_retained_ptr(ptr) }.map(PdfPage::from_handle)
     }
 
+    /// Wraps the corresponding `PDFView` API.
     #[must_use]
     pub fn current_destination(&self) -> Option<PdfDestination> {
         let ptr = unsafe { ffi::pdf_view_current_destination(self.handle.as_ptr()) };
         unsafe { ObjectHandle::from_retained_ptr(ptr) }.map(PdfDestination::from_handle)
     }
 
+    /// Wraps the corresponding `PDFView` API.
     #[must_use]
     pub fn current_selection(&self) -> Option<PdfSelection> {
         let ptr = unsafe { ffi::pdf_view_current_selection(self.handle.as_ptr()) };
         unsafe { ObjectHandle::from_retained_ptr(ptr) }.map(PdfSelection::from_handle)
     }
 
+    /// Wraps the corresponding `PDFView` API.
     pub fn set_current_selection(
         &self,
         selection: Option<&PdfSelection>,
@@ -126,10 +137,12 @@ impl PdfView {
         crate::util::status_result(status, out_error)
     }
 
+    /// Wraps the corresponding `PDFView` API.
     pub fn clear_selection(&self) {
         unsafe { ffi::pdf_view_clear_selection(self.handle.as_ptr()) };
     }
 
+    /// Wraps the corresponding `PDFView` API.
     pub fn go_to_page(&self, page: &PdfPage) -> Result<()> {
         let mut out_error = ptr::null_mut();
         let status = unsafe {
@@ -138,6 +151,7 @@ impl PdfView {
         crate::util::status_result(status, out_error)
     }
 
+    /// Wraps the corresponding `PDFView` API.
     pub fn go_to_destination(&self, destination: &PdfDestination) -> Result<()> {
         let mut out_error = ptr::null_mut();
         let status = unsafe {
@@ -150,6 +164,7 @@ impl PdfView {
         crate::util::status_result(status, out_error)
     }
 
+    /// Wraps the corresponding `PDFView` API.
     pub fn go_to_selection(&self, selection: &PdfSelection) -> Result<()> {
         let mut out_error = ptr::null_mut();
         let status = unsafe {
@@ -162,6 +177,7 @@ impl PdfView {
         crate::util::status_result(status, out_error)
     }
 
+    /// Wraps the corresponding `PDFView` API.
     pub fn set_display_mode(&self, mode: PdfDisplayMode) -> Result<()> {
         let mut out_error = ptr::null_mut();
         let status = unsafe {
@@ -170,6 +186,7 @@ impl PdfView {
         crate::util::status_result(status, out_error)
     }
 
+    /// Wraps the corresponding `PDFView` API.
     pub fn set_display_direction(&self, direction: PdfDisplayDirection) -> Result<()> {
         let mut out_error = ptr::null_mut();
         let status = unsafe {
@@ -182,6 +199,7 @@ impl PdfView {
         crate::util::status_result(status, out_error)
     }
 
+    /// Wraps the corresponding `PDFView` API.
     pub fn set_display_box(&self, display_box: DisplayBox) -> Result<()> {
         let mut out_error = ptr::null_mut();
         let status = unsafe {
@@ -194,26 +212,32 @@ impl PdfView {
         crate::util::status_result(status, out_error)
     }
 
+    /// Wraps the corresponding `PDFView` API.
     pub fn set_auto_scales(&self, value: bool) {
         unsafe { ffi::pdf_view_set_auto_scales(self.handle.as_ptr(), i32::from(value)) };
     }
 
+    /// Wraps the corresponding `PDFView` API.
     pub fn set_scale_factor(&self, value: f64) {
         unsafe { ffi::pdf_view_set_scale_factor(self.handle.as_ptr(), value) };
     }
 
+    /// Wraps the corresponding `PDFView` API.
     pub fn set_min_scale_factor(&self, value: f64) {
         unsafe { ffi::pdf_view_set_min_scale_factor(self.handle.as_ptr(), value) };
     }
 
+    /// Wraps the corresponding `PDFView` API.
     pub fn set_max_scale_factor(&self, value: f64) {
         unsafe { ffi::pdf_view_set_max_scale_factor(self.handle.as_ptr(), value) };
     }
 
+    /// Wraps the corresponding `PDFView` API.
     pub fn layout_document_view(&self) {
         unsafe { ffi::pdf_view_layout_document_view(self.handle.as_ptr()) };
     }
 
+    /// Wraps the corresponding `PDFView` API.
     #[must_use]
     pub fn area_of_interest_for_point(&self, point: PdfPoint) -> PdfAreaOfInterest {
         PdfAreaOfInterest::from_bits(unsafe {
@@ -221,17 +245,20 @@ impl PdfView {
         })
     }
 
+    /// Wraps the corresponding `PDFView` API.
     #[must_use]
     pub fn visible_page_count(&self) -> usize {
         unsafe { ffi::pdf_view_visible_page_count(self.handle.as_ptr()) as usize }
     }
 
+    /// Wraps the corresponding `PDFView` API.
     #[must_use]
     pub fn visible_page(&self, index: usize) -> Option<PdfPage> {
         let ptr = unsafe { ffi::pdf_view_visible_page_at(self.handle.as_ptr(), index as u64) };
         unsafe { ObjectHandle::from_retained_ptr(ptr) }.map(PdfPage::from_handle)
     }
 
+    /// Wraps the corresponding `PDFView` API.
     #[must_use]
     pub fn visible_pages(&self) -> Vec<PdfPage> {
         (0..self.visible_page_count())

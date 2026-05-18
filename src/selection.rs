@@ -8,6 +8,7 @@ use crate::page::PdfPage;
 use crate::types::{PdfRect, PdfTextRange};
 use crate::util::take_string;
 
+/// Wraps `PDFSelection`.
 #[derive(Debug, Clone)]
 pub struct PdfSelection {
     handle: ObjectHandle,
@@ -18,6 +19,7 @@ impl PdfSelection {
         Self { handle }
     }
 
+    /// Wraps `PDFSelection(document:)`.
     pub fn new(document: &PdfDocument) -> Result<Self> {
         let mut out_selection = ptr::null_mut();
         let mut out_error = ptr::null_mut();
@@ -31,22 +33,26 @@ impl PdfSelection {
         )?))
     }
 
+    /// Wraps the corresponding `PDFSelection` API.
     #[must_use]
     pub fn string(&self) -> Option<String> {
         take_string(unsafe { ffi::pdf_selection_string(self.handle.as_ptr()) })
     }
 
+    /// Wraps the corresponding `PDFSelection` API.
     #[must_use]
     pub fn page_count(&self) -> usize {
         unsafe { ffi::pdf_selection_page_count(self.handle.as_ptr()) as usize }
     }
 
+    /// Wraps the corresponding `PDFSelection` API.
     #[must_use]
     pub fn page(&self, index: usize) -> Option<PdfPage> {
         let ptr = unsafe { ffi::pdf_selection_page_at(self.handle.as_ptr(), index as u64) };
         unsafe { ObjectHandle::from_retained_ptr(ptr) }.map(PdfPage::from_handle)
     }
 
+    /// Wraps the corresponding `PDFSelection` API.
     #[must_use]
     pub fn pages(&self) -> Vec<PdfPage> {
         (0..self.page_count())
@@ -54,6 +60,7 @@ impl PdfSelection {
             .collect()
     }
 
+    /// Wraps the corresponding `PDFSelection` API.
     #[must_use]
     pub fn bounds_for_page(&self, page: &PdfPage) -> PdfRect {
         let mut x = 0.0_f64;
@@ -78,6 +85,7 @@ impl PdfSelection {
         }
     }
 
+    /// Wraps the corresponding `PDFSelection` API.
     #[must_use]
     pub fn number_of_text_ranges_on_page(&self, page: &PdfPage) -> usize {
         unsafe {
@@ -88,6 +96,7 @@ impl PdfSelection {
         }
     }
 
+    /// Wraps the corresponding `PDFSelection` API.
     #[must_use]
     pub fn text_range(&self, index: usize, page: &PdfPage) -> Option<PdfTextRange> {
         let mut location = 0_u64;
@@ -107,11 +116,13 @@ impl PdfSelection {
         })
     }
 
+    /// Wraps the corresponding `PDFSelection` API.
     #[must_use]
     pub fn selection_by_line_count(&self) -> usize {
         unsafe { ffi::pdf_selection_selections_by_line_count(self.handle.as_ptr()) as usize }
     }
 
+    /// Wraps the corresponding `PDFSelection` API.
     #[must_use]
     pub fn selection_by_line(&self, index: usize) -> Option<Self> {
         let ptr =
@@ -119,6 +130,7 @@ impl PdfSelection {
         unsafe { ObjectHandle::from_retained_ptr(ptr) }.map(Self::from_handle)
     }
 
+    /// Wraps the corresponding `PDFSelection` API.
     #[must_use]
     pub fn selections_by_line(&self) -> Vec<Self> {
         (0..self.selection_by_line_count())
@@ -126,6 +138,7 @@ impl PdfSelection {
             .collect()
     }
 
+    /// Wraps the corresponding `PDFSelection` API.
     pub fn add_selection(&self, other: &Self) -> Result<()> {
         let mut out_error = ptr::null_mut();
         let status = unsafe {
@@ -138,14 +151,17 @@ impl PdfSelection {
         crate::util::status_result(status, out_error)
     }
 
+    /// Wraps the corresponding `PDFSelection` API.
     pub fn extend_selection_at_end(&self, amount: isize) {
         unsafe { ffi::pdf_selection_extend_at_end(self.handle.as_ptr(), amount as i64) };
     }
 
+    /// Wraps the corresponding `PDFSelection` API.
     pub fn extend_selection_at_start(&self, amount: isize) {
         unsafe { ffi::pdf_selection_extend_at_start(self.handle.as_ptr(), amount as i64) };
     }
 
+    /// Wraps the corresponding `PDFSelection` API.
     pub fn extend_selection_for_line_boundaries(&self) {
         unsafe { ffi::pdf_selection_extend_for_line_boundaries(self.handle.as_ptr()) };
     }

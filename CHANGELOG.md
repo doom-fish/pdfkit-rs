@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.2.4] - 2026-05-18
+
+### Changed
+
+- Added one-line `///` rustdoc coverage across the public Rust API outside `src/ffi`, including wrappers, enums, fields, delegates, notifications, and option/info types, bringing rustdoc item coverage to 100%.
+
 ## [0.2.3] - 2026-05-17
 
 ### Changed

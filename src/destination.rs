@@ -8,18 +8,21 @@ use crate::page::PdfPage;
 use crate::types::{PdfDestinationInfo, PdfPoint};
 use crate::util::parse_json;
 
+/// Wraps `PDFDestination`.
 #[derive(Debug, Clone)]
 pub struct PdfDestination {
     handle: ObjectHandle,
 }
 
 impl PdfDestination {
+    /// Wraps `PDFDestination.unspecifiedValue`.
     pub const UNSPECIFIED_VALUE: f64 = 3.402_823_466_385_288_6e38;
 
     pub(crate) fn from_handle(handle: ObjectHandle) -> Self {
         Self { handle }
     }
 
+    /// Wraps `PDFDestination(page:at:)`.
     pub fn new(page: &PdfPage, point: PdfPoint) -> Result<Self> {
         let mut out_destination = ptr::null_mut();
         let mut out_error = ptr::null_mut();
@@ -39,6 +42,7 @@ impl PdfDestination {
         )?))
     }
 
+    /// Wraps the corresponding `PDFDestination` API.
     pub fn info(&self) -> Result<PdfDestinationInfo> {
         parse_json(
             unsafe { ffi::pdf_destination_info_json(self.handle.as_ptr()) },
@@ -46,16 +50,19 @@ impl PdfDestination {
         )
     }
 
+    /// Wraps the corresponding `PDFDestination` API.
     #[must_use]
     pub fn page(&self) -> Option<PdfPage> {
         let ptr = unsafe { ffi::pdf_destination_page(self.handle.as_ptr()) };
         unsafe { ObjectHandle::from_retained_ptr(ptr) }.map(PdfPage::from_handle)
     }
 
+    /// Wraps the corresponding `PDFDestination` API.
     pub fn set_zoom(&self, zoom: f64) {
         unsafe { ffi::pdf_destination_set_zoom(self.handle.as_ptr(), zoom) };
     }
 
+    /// Wraps the corresponding `PDFDestination` API.
     #[must_use]
     pub fn compare(&self, other: &Self) -> Ordering {
         match unsafe { ffi::pdf_destination_compare(self.handle.as_ptr(), other.handle.as_ptr()) } {

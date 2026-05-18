@@ -6,6 +6,7 @@ use crate::handle::ObjectHandle;
 use crate::types::{PdfBorderInfo, PdfBorderStyle};
 use crate::util::parse_json;
 
+/// Wraps `PDFBorder`.
 #[derive(Debug, Clone)]
 pub struct PdfBorder {
     handle: ObjectHandle,
@@ -16,6 +17,7 @@ impl PdfBorder {
         Self { handle }
     }
 
+    /// Wraps the corresponding `PDFBorder` API.
     pub fn new() -> Result<Self> {
         let mut out_border = ptr::null_mut();
         let mut out_error = ptr::null_mut();
@@ -27,6 +29,7 @@ impl PdfBorder {
         )?))
     }
 
+    /// Wraps the corresponding `PDFBorder` API.
     pub fn info(&self) -> Result<PdfBorderInfo> {
         parse_json(
             unsafe { ffi::pdf_border_info_json(self.handle.as_ptr()) },
@@ -34,6 +37,7 @@ impl PdfBorder {
         )
     }
 
+    /// Wraps the corresponding `PDFBorder` API.
     pub fn set_style(&self, style: PdfBorderStyle) -> Result<()> {
         let mut out_error = ptr::null_mut();
         let status = unsafe {
@@ -42,10 +46,12 @@ impl PdfBorder {
         crate::util::status_result(status, out_error)
     }
 
+    /// Wraps the corresponding `PDFBorder` API.
     pub fn set_line_width(&self, width: f64) {
         unsafe { ffi::pdf_border_set_line_width(self.handle.as_ptr(), width) };
     }
 
+    /// Wraps the corresponding `PDFBorder` API.
     pub fn set_dash_pattern(&self, dash_pattern: Option<&[f64]>) -> Result<()> {
         let mut out_error = ptr::null_mut();
         let (values, len) = dash_pattern.map_or((ptr::null(), 0_u64), |values| {
