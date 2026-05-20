@@ -30,6 +30,9 @@ mod action_url;
 mod annotation;
 mod annotation_constants;
 mod appearance_characteristics;
+#[cfg(feature = "async")]
+#[cfg_attr(docsrs, doc(cfg(feature = "async")))]
+pub mod async_api;
 mod border;
 mod destination;
 mod document;
@@ -62,6 +65,11 @@ pub use annotation_constants::{
     PdfAnnotationSubtype, PdfAnnotationTextIconName, PdfAnnotationWidgetSubtype,
 };
 pub use appearance_characteristics::PdfAppearanceCharacteristics;
+#[cfg(feature = "async")]
+pub use async_api::{
+    PdfDocumentFindEvent, PdfDocumentFindMatch, PdfDocumentFindOptions, PdfDocumentFindPageMatch,
+    PdfDocumentFindStream,
+};
 pub use border::PdfBorder;
 pub use destination::PdfDestination;
 pub use document::PdfDocument;
@@ -112,5 +120,10 @@ pub mod prelude {
         PdfThumbnailViewInfo, PdfThumbnailViewNotification, PdfView, PdfViewDelegate,
         PdfViewDelegateHandle, PdfViewInfo, PdfViewNotification, PdfWidgetCellState,
         PdfWidgetControlType, Result,
+    };
+    #[cfg(feature = "async")]
+    pub use crate::{
+        PdfDocumentFindEvent, PdfDocumentFindMatch, PdfDocumentFindOptions,
+        PdfDocumentFindPageMatch, PdfDocumentFindStream,
     };
 }

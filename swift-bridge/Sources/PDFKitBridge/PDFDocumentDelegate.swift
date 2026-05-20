@@ -79,6 +79,9 @@ final class PDFRustDocumentDelegate: NSObject, PDFDocumentDelegate {
     @objc(documentDidFindMatch:)
     func documentDidFindMatch(_ notification: Notification) {
         notificationCallback?(context, 5)
+        if let selection = notification.userInfo?["PDFDocumentFoundSelection"] as? PDFSelection {
+            matchCallback?(context, pdf_retain_selection(selection))
+        }
     }
 
     @objc(didMatchString:)

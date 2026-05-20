@@ -98,4 +98,10 @@ unsafe extern "C" {
         index_b: u64,
         out_error_message: *mut *mut c_char,
     ) -> i32;
+    pub fn pdf_document_find_string_json(
+        handle: *mut c_void,
+        needle: *const c_char,
+        options: u64,
+        out_error_message: *mut *mut c_char,
+    ) -> *mut c_char;
 }

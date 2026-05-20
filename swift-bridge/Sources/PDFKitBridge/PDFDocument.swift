@@ -347,6 +347,86 @@ public func pdf_document_set_delegate(
     }
 }
 
+private func pdf_document_find_matches_payload(
+    _ document: PDFDocument,
+    _ selections: [PDFSelection]
+) -> [[String: Any]] {
+    selections.map { selection in
+        let pages: [[String: Any]] = selection.pages.compactMap { page in
+            let pageIndex = document.index(for: page)
+            guard pageIndex != NSNotFound else {
+                return nil
+            }
+            let rangeCount = selection.numberOfTextRanges(on: page)
+            let ranges = (0..<rangeCount).map { rangeIndex in
+                pdf_range_dict(selection.range(at: rangeIndex, on: page))
+            }
+            return [
+                "page_index": pageIndex,
+                "ranges": ranges,
+            ]
+        }
+        return [
+            "text": selection.string ?? NSNull(),
+            "pages": pages,
+        ]
+    }
+}
+
+@_cdecl("pdf_document_begin_find_string")
+public func pdf_document_begin_find_string(
+    _ handle: UnsafeMutableRawPointer?,
+    _ needle: UnsafePointer<CChar>?,
+    _ options: UInt64,
+    _ outError: UnsafeMutablePointer<UnsafeMutablePointer<CChar>?>?
+) -> Int32 {
+    pdf_run(outError) {
+        guard let document = pdf_document_value(handle), let needle else {
+            throw PDFBridgeError.invalidArgument("missing document handle or search string")
+        }
+        document.beginFindString(
+            String(cString: needle),
+            withOptions: NSString.CompareOptions(rawValue: UInt(options))
+        )
+    }
+}
+
+@_cdecl("pdf_document_find_string_json")
+public func pdf_document_find_string_json(
+    _ handle: UnsafeMutableRawPointer?,
+    _ needle: UnsafePointer<CChar>?,
+    _ options: UInt64,
+    _ outError: UnsafeMutablePointer<UnsafeMutablePointer<CChar>?>?
+) -> UnsafeMutablePointer<CChar>? {
+    do {
+        guard let document = pdf_document_value(handle), let needle else {
+            throw PDFBridgeError.invalidArgument("missing document handle or search string")
+        }
+        let matches = document.findString(
+            String(cString: needle),
+            withOptions: NSString.CompareOptions(rawValue: UInt(options))
+        )
+        let payload = pdf_document_find_matches_payload(document, matches)
+        guard let json = pdf_json_string(from: payload) else {
+            throw PDFBridgeError.framework("failed to encode PDFDocument find results")
+        }
+        outError?.pointee = nil
+        return pdf_string(json)
+    } catch {
+        let bridgeError = (error as? PDFBridgeError) ?? .framework((error as NSError).localizedDescription)
+        outError?.pointee = pdf_string(bridgeError.description)
+        return nil
+    }
+}
+
+@_cdecl("pdf_document_cancel_find_string")
+public func pdf_document_cancel_find_string(_ handle: UnsafeMutableRawPointer?) {
+    guard let document = pdf_document_value(handle) else {
+        return
+    }
+    document.cancelFindString()
+}
+
 @_cdecl("pdf_document_write_to_url")
 public func pdf_document_write_to_url(
     _ handle: UnsafeMutableRawPointer?,

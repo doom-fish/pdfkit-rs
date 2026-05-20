@@ -2,7 +2,7 @@
 
 Safe Rust bindings for Apple's [PDFKit](https://developer.apple.com/documentation/pdfkit) framework on macOS. The published Cargo package is `pdfkit-rs`; the Rust library target is `pdfkit`.
 
-> **Status:** v0.2.2 closes the remaining public PDFKit audit gaps with `PdfActionResetForm`, typed annotation key/subtype/icon constants, selection granularity and page-image initialization options, `PdfViewDelegate`, `PdfPageOverlayViewProvider`, and 100% coverage of the non-deprecated top-level SDK declarations counted by `COVERAGE_AUDIT.md`.
+> **Status:** v0.3 adds an optional executor-agnostic `async_api` module for document string finding while preserving full coverage of the non-deprecated top-level PDFKit SDK declarations counted by `COVERAGE_AUDIT.md`.
 
 ## Highlights
 
@@ -61,7 +61,7 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 
 ### Delegates, notifications, and utilities
 
-- `PdfDocumentDelegate`, `PdfDocumentDelegateHandle`, `PdfViewDelegate`, `PdfViewDelegateHandle`
+- `PdfDocumentDelegate`, `PdfDocumentDelegateHandle`, `PdfViewDelegate`, `PdfViewDelegateHandle`, and `async_api::PdfDocumentFindStream`
 - `PdfPageOverlayViewProvider`, `PdfPageOverlayViewProviderHandle`, `PdfPageOverlayView`
 - `PdfDocumentWriteOptions::{with_owner_password, with_user_password, with_access_permissions, with_burn_in_annotations, with_save_text_from_ocr, with_save_images_as_jpeg, with_optimize_images_for_screen}`
 - `PdfDocumentNotification`, `PdfDocumentNotificationUserInfoKey`, `PdfViewNotification`, `PdfThumbnailViewNotification`
@@ -74,6 +74,14 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 - `PdfThumbnailView::new`, `set_pdf_view`, `set_thumbnail_size`, `set_maximum_number_of_columns`
 - `PdfAppearanceCharacteristics::new`, `set_control_type`, `set_caption`, `set_background_color`, `info`
 - `PdfAreaOfInterest`, `PdfDestination::UNSPECIFIED_VALUE`, `PdfAccessibilityNode::public_api_available`, `PdfAccessibilityNode::availability_note`
+
+## Async document find
+
+Enable the `async` Cargo feature to use `pdfkit::async_api::PdfDocumentFindStream`, which runs `PDFDocument.findString(_:withOptions:)` on a worker thread and exposes owned match snapshots through an executor-agnostic bounded async stream.
+
+```toml
+pdfkit-rs = { version = "0.3", features = ["async"] }
+```
 
 ## Examples
 
@@ -94,6 +102,7 @@ The crate now ships smoke examples covering the core logical areas:
 - `13_accessibility_node_status`
 - `14_action_named_remote_goto`
 - `15_document_delegate_write_options`
+- `16_async_find_stream` *(requires `--features async`)*
 
 Run one example:
 
@@ -109,7 +118,7 @@ for ex in examples/*.rs; do cargo run --example "$(basename "$ex" .rs)"; done
 
 ## Coverage audit
 
-See [`COVERAGE.md`](COVERAGE.md) for the v0.2.2 header audit and [`COVERAGE_AUDIT.md`](COVERAGE_AUDIT.md) for the symbol-level 100% audit report.
+See [`COVERAGE.md`](COVERAGE.md) for the v0.3.0 header audit and [`COVERAGE_AUDIT.md`](COVERAGE_AUDIT.md) for the symbol-level 100% audit report.
 
 ## License
 
