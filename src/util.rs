@@ -1,4 +1,4 @@
-use std::ffi::{CStr, CString};
+use std::ffi::CString;
 use std::os::raw::{c_char, c_void};
 use std::path::Path;
 
@@ -32,15 +32,8 @@ pub(crate) fn path_to_c_string(path: &Path) -> Result<CString> {
 /// by the Swift bridge using `malloc` or compatible allocator. The pointer must not be used after
 /// this function returns as the memory is freed.
 pub(crate) fn take_string(ptr: *mut c_char) -> Option<String> {
-    if ptr.is_null() {
-        return None;
-    }
-
-    // SAFETY: ptr is checked for null; caller guarantees valid C string from Swift
-    let string = unsafe { CStr::from_ptr(ptr).to_string_lossy().into_owned() };
-    // SAFETY: ptr is guaranteed to be allocated by Swift bridge using malloc
-    unsafe { libc::free(ptr.cast::<c_void>()) };
-    Some(string)
+    // SAFETY: caller guarantees `ptr` is null or a valid bridge-allocated C string.
+    unsafe { doom_fish_utils::ffi_string::take_owned_cstring_c(ptr, |p| libc::free(p.cast::<c_void>())) }
 }
 
 pub(crate) fn status_result(status: i32, error_ptr: *mut c_char) -> Result<()> {
