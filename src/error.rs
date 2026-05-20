@@ -39,3 +39,27 @@ impl fmt::Display for PdfKitError {
 }
 
 impl Error for PdfKitError {}
+
+#[cfg(test)]
+mod tests {
+    use super::PdfKitError;
+
+    #[test]
+    fn constructor_accessors_and_display_match() {
+        let error = PdfKitError::new(-3, "failed to parse action");
+
+        assert_eq!(error.code(), -3);
+        assert_eq!(error.message(), "failed to parse action");
+        assert_eq!(error.to_string(), "failed to parse action (status -3)");
+    }
+
+    #[test]
+    fn cloned_errors_preserve_payloads_and_have_no_source() {
+        let error = PdfKitError::new(-5, "bad annotation");
+        let cloned = error.clone();
+        let as_std_error: &dyn std::error::Error = &cloned;
+
+        assert_eq!(cloned, error);
+        assert!(as_std_error.source().is_none());
+    }
+}

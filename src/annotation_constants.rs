@@ -188,3 +188,63 @@ pdf_string_enum! {
         Text => "/Tx"
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::{
+        PdfAnnotationKey, PdfAnnotationLineEndingStyle, PdfAnnotationTextIconName,
+        PdfAnnotationWidgetSubtype,
+    };
+    use crate::types::{PdfLineStyle, PdfTextAnnotationIconType};
+
+    #[test]
+    fn annotation_keys_round_trip_through_names() {
+        assert_eq!(PdfAnnotationKey::WidgetValue.name(), "/V");
+        assert_eq!(PdfAnnotationKey::from_name("/AA"), Some(PdfAnnotationKey::AdditionalActions));
+        assert_eq!(PdfAnnotationKey::from_name("/missing"), None);
+    }
+
+    #[test]
+    fn line_ending_styles_round_trip_with_pdf_line_styles() {
+        let cases = [
+            (PdfLineStyle::None, PdfAnnotationLineEndingStyle::None),
+            (PdfLineStyle::Square, PdfAnnotationLineEndingStyle::Square),
+            (PdfLineStyle::Circle, PdfAnnotationLineEndingStyle::Circle),
+            (PdfLineStyle::Diamond, PdfAnnotationLineEndingStyle::Diamond),
+            (PdfLineStyle::OpenArrow, PdfAnnotationLineEndingStyle::OpenArrow),
+            (PdfLineStyle::ClosedArrow, PdfAnnotationLineEndingStyle::ClosedArrow),
+        ];
+
+        for (line_style, annotation_style) in cases {
+            assert_eq!(PdfAnnotationLineEndingStyle::from_line_style(line_style), annotation_style);
+            assert_eq!(annotation_style.line_style(), line_style);
+            assert_eq!(PdfAnnotationLineEndingStyle::from_name(annotation_style.name()), Some(annotation_style));
+        }
+    }
+
+    #[test]
+    fn text_icon_names_round_trip_with_icon_types() {
+        let cases = [
+            (PdfTextAnnotationIconType::Comment, PdfAnnotationTextIconName::Comment),
+            (PdfTextAnnotationIconType::Key, PdfAnnotationTextIconName::Key),
+            (PdfTextAnnotationIconType::Note, PdfAnnotationTextIconName::Note),
+            (PdfTextAnnotationIconType::Help, PdfAnnotationTextIconName::Help),
+            (PdfTextAnnotationIconType::NewParagraph, PdfAnnotationTextIconName::NewParagraph),
+            (PdfTextAnnotationIconType::Paragraph, PdfAnnotationTextIconName::Paragraph),
+            (PdfTextAnnotationIconType::Insert, PdfAnnotationTextIconName::Insert),
+        ];
+
+        for (icon_type, icon_name) in cases {
+            assert_eq!(PdfAnnotationTextIconName::from_icon_type(icon_type), icon_name);
+            assert_eq!(icon_name.icon_type(), icon_type);
+            assert_eq!(PdfAnnotationTextIconName::from_name(icon_name.name()), Some(icon_name));
+        }
+    }
+
+    #[test]
+    fn widget_subtypes_round_trip_through_names() {
+        assert_eq!(PdfAnnotationWidgetSubtype::Button.name(), "/Btn");
+        assert_eq!(PdfAnnotationWidgetSubtype::from_name("/Tx"), Some(PdfAnnotationWidgetSubtype::Text));
+        assert_eq!(PdfAnnotationWidgetSubtype::from_name("/Other"), None);
+    }
+}

@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.3.1] - 2026-05-20
+
+- Added in-`src/` unit tests across annotation_constants, error, notifications, and types (Tier 2 quality polish), providing fast `cargo test --lib` fail-fast signal alongside the existing integration tests under `tests/`.
+
 ## [0.3.0] - 2026-05-20
 
 ### Added

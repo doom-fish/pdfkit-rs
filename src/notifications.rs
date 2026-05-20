@@ -144,3 +144,48 @@ impl PdfThumbnailViewNotification {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::{
+        PdfDocumentNotification, PdfDocumentNotificationUserInfoKey, PdfThumbnailViewNotification,
+        PdfViewNotification,
+    };
+
+    #[test]
+    fn document_notifications_round_trip_names_and_indices() {
+        let cases = [
+            (0, PdfDocumentNotification::DidUnlock, "PDFDocumentDidUnlockNotification"),
+            (5, PdfDocumentNotification::DidFindMatch, "PDFDocumentDidFindMatchNotification"),
+            (9, PdfDocumentNotification::DidEndPageWrite, "PDFDocumentDidEndPageWriteNotification"),
+        ];
+
+        for (raw, notification, name) in cases {
+            assert_eq!(PdfDocumentNotification::from_raw(raw), Some(notification));
+            assert_eq!(notification.name(), name);
+        }
+        assert_eq!(PdfDocumentNotification::from_raw(99), None);
+    }
+
+    #[test]
+    fn document_user_info_keys_expose_expected_names() {
+        assert_eq!(
+            PdfDocumentNotificationUserInfoKey::FoundSelection.name(),
+            "PDFDocumentFoundSelection"
+        );
+        assert_eq!(PdfDocumentNotificationUserInfoKey::PageIndex.name(), "PDFDocumentPageIndex");
+    }
+
+    #[test]
+    fn view_and_thumbnail_notifications_expose_expected_names() {
+        assert_eq!(PdfViewNotification::PageChanged.name(), "PDFViewPageChangedNotification");
+        assert_eq!(
+            PdfViewNotification::VisiblePagesChanged.name(),
+            "PDFViewVisiblePagesChangedNotification"
+        );
+        assert_eq!(
+            PdfThumbnailViewNotification::DocumentEdited.name(),
+            "PDFThumbnailViewDocumentEditedNotification"
+        );
+    }
+}

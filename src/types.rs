@@ -970,3 +970,130 @@ pub struct PdfThumbnailViewInfo {
     /// Mirrors the corresponding `PDFThumbnailView` field.
     pub allows_multiple_selection: bool,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::{
+        DisplayBox, PdfActionNamedName, PdfAreaOfInterest, PdfBorderStyle, PdfColor,
+        PdfDisplayDirection, PdfDisplayMode, PdfDocumentWriteOptions,
+        PdfPageImageInitializationOptions, PdfInterpolationQuality, PdfLineStyle, PdfMarkupType,
+        PdfPoint, PdfRect, PdfSelectionGranularity, PdfSize, PdfTextAnnotationIconType,
+        PdfThumbnailLayoutMode, PdfWidgetCellState,
+    };
+
+    fn assert_close(left: f64, right: f64) {
+        assert!((left - right).abs() < f64::EPSILON, "expected {left} to match {right}");
+    }
+
+    #[test]
+    fn geometry_wrappers_preserve_field_values() {
+        let rect = PdfRect {
+            x: 1.0,
+            y: 2.0,
+            width: 3.0,
+            height: 4.0,
+        };
+        let point = PdfPoint { x: -1.0, y: 5.0 };
+        let size = PdfSize {
+            width: 8.0,
+            height: 9.0,
+        };
+        let color = PdfColor {
+            red: 0.1,
+            green: 0.2,
+            blue: 0.3,
+            alpha: 0.4,
+        };
+
+        assert_close(rect.x, 1.0);
+        assert_close(rect.y, 2.0);
+        assert_close(rect.width, 3.0);
+        assert_close(rect.height, 4.0);
+        assert_close(point.x, -1.0);
+        assert_close(point.y, 5.0);
+        assert_close(size.width, 8.0);
+        assert_close(size.height, 9.0);
+        assert_close(color.red, 0.1);
+        assert_close(color.green, 0.2);
+        assert_close(color.blue, 0.3);
+        assert_close(color.alpha, 0.4);
+    }
+
+    #[test]
+    fn action_and_annotation_enums_round_trip_raw_values() {
+        assert_eq!(DisplayBox::CropBox.as_raw(), 1);
+        assert_eq!(PdfBorderStyle::from_raw(4), Some(PdfBorderStyle::Underline));
+        assert_eq!(PdfBorderStyle::from_raw(99), None);
+        assert_eq!(PdfActionNamedName::GoToPage.as_raw(), 7);
+        assert_eq!(PdfActionNamedName::from_raw(7), Some(PdfActionNamedName::GoToPage));
+        assert_eq!(PdfLineStyle::from_raw(5), Some(PdfLineStyle::ClosedArrow));
+        assert_eq!(PdfTextAnnotationIconType::Insert.as_raw(), 6);
+        assert_eq!(PdfTextAnnotationIconType::from_raw(6), Some(PdfTextAnnotationIconType::Insert));
+        assert_eq!(PdfMarkupType::from_raw(3), Some(PdfMarkupType::Redact));
+    }
+
+    #[test]
+    fn view_related_enums_round_trip_raw_values() {
+        assert_eq!(PdfDisplayMode::from_raw(3), Some(PdfDisplayMode::TwoUpContinuous));
+        assert_eq!(PdfDisplayDirection::from_raw(1), Some(PdfDisplayDirection::Horizontal));
+        assert_eq!(PdfInterpolationQuality::from_raw(2), Some(PdfInterpolationQuality::High));
+        assert_eq!(PdfWidgetCellState::Mixed.as_raw(), -1);
+        assert_eq!(PdfWidgetCellState::from_raw(-1), Some(PdfWidgetCellState::Mixed));
+        assert_eq!(PdfSelectionGranularity::Line.as_raw(), 2);
+        assert_eq!(PdfSelectionGranularity::from_raw(2), Some(PdfSelectionGranularity::Line));
+        assert_eq!(PdfThumbnailLayoutMode::Horizontal.as_raw(), 1);
+        assert_eq!(PdfThumbnailLayoutMode::from_raw(1), Some(PdfThumbnailLayoutMode::Horizontal));
+    }
+
+    #[test]
+    fn area_of_interest_bitflags_combine_and_mask() {
+        let mut area = PdfAreaOfInterest::PAGE | PdfAreaOfInterest::TEXT;
+        area |= PdfAreaOfInterest::LINK;
+
+        assert!(!PdfAreaOfInterest::NONE.intersects(PdfAreaOfInterest::PAGE));
+        assert!(area.contains(PdfAreaOfInterest::PAGE));
+        assert!(area.contains(PdfAreaOfInterest::TEXT));
+        assert!(area.intersects(PdfAreaOfInterest::LINK));
+        assert!(!area.contains(PdfAreaOfInterest::IMAGE));
+        assert_eq!((area & PdfAreaOfInterest::TEXT).bits(), PdfAreaOfInterest::TEXT.bits());
+        assert!(!PdfAreaOfInterest::NONE.bits().eq(&PdfAreaOfInterest::ANY.bits()));
+    }
+
+    #[test]
+    fn builder_options_capture_selected_values() {
+        let image_options = PdfPageImageInitializationOptions::default()
+            .with_media_box(PdfRect {
+                x: 0.0,
+                y: 1.0,
+                width: 200.0,
+                height: 100.0,
+            })
+            .with_rotation(90)
+            .with_upscale_if_smaller(true)
+            .with_compression_quality(0.8);
+        let write_options = PdfDocumentWriteOptions::default()
+            .with_owner_password("owner")
+            .with_user_password("user")
+            .with_access_permissions(0x15)
+            .with_burn_in_annotations(true)
+            .with_save_text_from_ocr(true)
+            .with_save_images_as_jpeg(true)
+            .with_optimize_images_for_screen(true);
+
+        assert_eq!(image_options.rotation, Some(90));
+        assert!(image_options.upscale_if_smaller);
+        assert_close(
+            image_options
+                .compression_quality
+                .expect("compression quality should be set"),
+            0.8,
+        );
+        assert_eq!(write_options.owner_password.as_deref(), Some("owner"));
+        assert_eq!(write_options.user_password.as_deref(), Some("user"));
+        assert_eq!(write_options.access_permissions, Some(0x15));
+        assert!(write_options.burn_in_annotations);
+        assert!(write_options.save_text_from_ocr);
+        assert!(write_options.save_images_as_jpeg);
+        assert!(write_options.optimize_images_for_screen);
+    }
+}
