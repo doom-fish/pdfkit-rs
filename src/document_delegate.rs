@@ -3,6 +3,7 @@ use std::fmt;
 use std::os::raw::{c_char, c_void};
 use std::panic::{catch_unwind, AssertUnwindSafe};
 use std::ptr;
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 use crate::error::Result;
 use crate::ffi;
@@ -31,21 +32,77 @@ pub trait PdfDocumentDelegate: 'static {
 
 struct DelegateState {
     delegate: Box<dyn PdfDocumentDelegate>,
+    ref_count: AtomicUsize,
+}
+
+impl DelegateState {
+    fn into_raw(delegate: Box<dyn PdfDocumentDelegate>) -> *mut Self {
+        Box::into_raw(Box::new(Self {
+            delegate,
+            ref_count: AtomicUsize::new(1),
+        }))
+    }
+
+    /// Increment the reference count.
+    ///
+    /// # Safety
+    ///
+    /// `ptr` must point to a valid, live `DelegateState`.
+    unsafe fn retain(ptr: *mut Self) {
+        unsafe { &*ptr }.ref_count.fetch_add(1, Ordering::Relaxed);
+    }
+
+    /// Decrement the reference count, freeing the state if it reaches zero.
+    ///
+    /// # Safety
+    ///
+    /// `ptr` must point to a valid, live `DelegateState`. After this call,
+    /// `ptr` must not be used if the state was freed.
+    unsafe fn release(ptr: *mut Self) {
+        if ptr.is_null() {
+            return;
+        }
+        let prev = unsafe { &*ptr }.ref_count.fetch_sub(1, Ordering::Release);
+        if prev == 1 {
+            // The Acquire fence pairs with the Release stores from other
+            // threads' `fetch_sub` calls, guaranteeing the freeing thread sees
+            // all happened-before writes from every other holder. This is the
+            // canonical Arc-style refcount drop pattern; removing the fence is
+            // unsound on weakly-ordered architectures (e.g. AArch64).
+            std::sync::atomic::fence(Ordering::Acquire);
+            drop(unsafe { Box::from_raw(ptr) });
+        }
+    }
+}
+
+// C trampoline handed to Swift so the bridge delegate object can take a +1
+// reference on the Rust `DelegateState` for the duration of its own lifetime.
+// This keeps the state alive while any callback can still be dispatched on a
+// background queue (e.g. an async document find).
+extern "C" fn context_retain_cb(context: *mut c_void) {
+    if !context.is_null() {
+        unsafe { DelegateState::retain(context.cast::<DelegateState>()) };
+    }
+}
+
+// C trampoline handed to Swift, invoked from the bridge delegate's `deinit` to
+// drop the +1 reference taken in `context_retain_cb`. `DelegateState::release`
+// null-checks internally.
+extern "C" fn context_release_cb(context: *mut c_void) {
+    unsafe { DelegateState::release(context.cast::<DelegateState>()) };
 }
 
 /// Wraps `PDFDocumentDelegateHandle`.
 pub struct PdfDocumentDelegateHandle {
     handle: ObjectHandle,
-    _state: Box<DelegateState>,
+    context: *mut DelegateState,
 }
 
 impl PdfDocumentDelegateHandle {
     /// Registers a Rust implementation of `PDFDocumentDelegate`.
     pub fn new(delegate: impl PdfDocumentDelegate) -> Result<Self> {
-        let mut state = Box::new(DelegateState {
-            delegate: Box::new(delegate),
-        });
-        let context = ptr::addr_of_mut!(*state).cast::<c_void>();
+        let context_ptr = DelegateState::into_raw(Box::new(delegate));
+        let context = context_ptr.cast::<c_void>();
         let mut out_delegate = ptr::null_mut();
         let mut out_error = ptr::null_mut();
         let status = unsafe {
@@ -55,19 +112,41 @@ impl PdfDocumentDelegateHandle {
                 Some(pdf_document_delegate_match_trampoline),
                 Some(pdf_document_delegate_page_class_name_trampoline),
                 Some(pdf_document_delegate_annotation_class_name_trampoline),
+                context_retain_cb,
+                context_release_cb,
                 &mut out_delegate,
                 &mut out_error,
             )
         };
-        crate::util::status_result(status, out_error)?;
+        if let Err(err) = crate::util::status_result(status, out_error) {
+            // Swift never took ownership; drop the initial reference.
+            unsafe { DelegateState::release(context_ptr) };
+            return Err(err);
+        }
+        let handle = match crate::util::required_handle(out_delegate, "PDFDocumentDelegate") {
+            Ok(handle) => handle,
+            Err(err) => {
+                unsafe { DelegateState::release(context_ptr) };
+                return Err(err);
+            }
+        };
         Ok(Self {
-            handle: crate::util::required_handle(out_delegate, "PDFDocumentDelegate")?,
-            _state: state,
+            handle,
+            context: context_ptr,
         })
     }
 
     pub(crate) fn as_handle_ptr(&self) -> *mut c_void {
         self.handle.as_ptr()
+    }
+}
+
+impl Drop for PdfDocumentDelegateHandle {
+    fn drop(&mut self) {
+        // Drop the initial reference taken in `new`. The Swift delegate object
+        // holds its own +1 (taken via `context_retain_cb`) which is released in
+        // its `deinit`, so an in-flight callback can never observe freed state.
+        unsafe { DelegateState::release(self.context) };
     }
 }
 

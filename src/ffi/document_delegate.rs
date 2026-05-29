@@ -11,6 +11,7 @@ pub type PdfDocumentDelegatePageClassNameCallback =
 pub type PdfDocumentDelegateAnnotationClassNameCallback = Option<
     unsafe extern "C" fn(context: *mut c_void, annotation_type: *const c_char) -> *mut c_char,
 >;
+pub type PdfDocumentDelegateContextCallback = extern "C" fn(context: *mut c_void);
 
 unsafe extern "C" {
     pub fn pdf_document_delegate_new(
@@ -19,6 +20,8 @@ unsafe extern "C" {
         match_callback: PdfDocumentDelegateMatchCallback,
         page_class_name_callback: PdfDocumentDelegatePageClassNameCallback,
         annotation_class_name_callback: PdfDocumentDelegateAnnotationClassNameCallback,
+        context_retain: PdfDocumentDelegateContextCallback,
+        context_release: PdfDocumentDelegateContextCallback,
         out_delegate: *mut *mut c_void,
         out_error_message: *mut *mut c_char,
     ) -> i32;

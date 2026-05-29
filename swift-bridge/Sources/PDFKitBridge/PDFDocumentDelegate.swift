@@ -5,6 +5,7 @@ public typealias PDFDocumentDelegateNotificationCallback = @convention(c) (Unsaf
 public typealias PDFDocumentDelegateMatchCallback = @convention(c) (UnsafeMutableRawPointer?, UnsafeMutableRawPointer?) -> Void
 public typealias PDFDocumentDelegatePageClassNameCallback = @convention(c) (UnsafeMutableRawPointer?) -> UnsafeMutablePointer<CChar>?
 public typealias PDFDocumentDelegateAnnotationClassNameCallback = @convention(c) (UnsafeMutableRawPointer?, UnsafePointer<CChar>?) -> UnsafeMutablePointer<CChar>?
+public typealias PDFDocumentDelegateContextCallback = @convention(c) (UnsafeMutableRawPointer) -> Void
 
 final class PDFRustDocumentDelegate: NSObject, PDFDocumentDelegate {
     private let context: UnsafeMutableRawPointer?
@@ -12,19 +13,36 @@ final class PDFRustDocumentDelegate: NSObject, PDFDocumentDelegate {
     private let matchCallback: PDFDocumentDelegateMatchCallback?
     private let pageClassNameCallback: PDFDocumentDelegatePageClassNameCallback?
     private let annotationClassNameCallback: PDFDocumentDelegateAnnotationClassNameCallback?
+    private let contextRelease: PDFDocumentDelegateContextCallback?
 
     init(
         context: UnsafeMutableRawPointer?,
         notificationCallback: PDFDocumentDelegateNotificationCallback?,
         matchCallback: PDFDocumentDelegateMatchCallback?,
         pageClassNameCallback: PDFDocumentDelegatePageClassNameCallback?,
-        annotationClassNameCallback: PDFDocumentDelegateAnnotationClassNameCallback?
+        annotationClassNameCallback: PDFDocumentDelegateAnnotationClassNameCallback?,
+        contextRetain: PDFDocumentDelegateContextCallback?,
+        contextRelease: PDFDocumentDelegateContextCallback?
     ) {
         self.context = context
         self.notificationCallback = notificationCallback
         self.matchCallback = matchCallback
         self.pageClassNameCallback = pageClassNameCallback
         self.annotationClassNameCallback = annotationClassNameCallback
+        self.contextRelease = contextRelease
+        super.init()
+        // Take a +1 on the Rust DelegateState for the lifetime of this object so
+        // an in-flight callback (e.g. an async find on a background queue) can
+        // never observe freed state.
+        if let context {
+            contextRetain?(context)
+        }
+    }
+
+    deinit {
+        if let context {
+            contextRelease?(context)
+        }
     }
 
     private func resolvedPageClassName() -> AnyClass {
@@ -107,6 +125,8 @@ public func pdf_document_delegate_new(
     _ matchCallback: PDFDocumentDelegateMatchCallback?,
     _ pageClassNameCallback: PDFDocumentDelegatePageClassNameCallback?,
     _ annotationClassNameCallback: PDFDocumentDelegateAnnotationClassNameCallback?,
+    _ contextRetain: PDFDocumentDelegateContextCallback,
+    _ contextRelease: PDFDocumentDelegateContextCallback,
     _ outDelegate: UnsafeMutablePointer<UnsafeMutableRawPointer?>?,
     _ outError: UnsafeMutablePointer<UnsafeMutablePointer<CChar>?>?
 ) -> Int32 {
@@ -119,7 +139,9 @@ public func pdf_document_delegate_new(
             notificationCallback: notificationCallback,
             matchCallback: matchCallback,
             pageClassNameCallback: pageClassNameCallback,
-            annotationClassNameCallback: annotationClassNameCallback
+            annotationClassNameCallback: annotationClassNameCallback,
+            contextRetain: contextRetain,
+            contextRelease: contextRelease
         )
         outDelegate.pointee = pdf_retain_document_delegate(delegate)
     }
