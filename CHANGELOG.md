@@ -1,5 +1,61 @@
 # Changelog
 
+All notable changes to `pdfkit-rs` are documented here.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [0.4.0] - Unreleased
+
+### Security
+
+- `PdfDocumentDelegateHandle` no longer frees the delegate while a callback is
+  in flight: the Swift delegate object holds its own reference to the callback
+  context until it is deallocated. Up to 0.3.2, dropping the handle during an
+  asynchronous find could use freed memory.
+- `PdfDocumentDelegate` requires `Send`, and callbacks no longer create
+  aliasing `&mut` references to the delegate. Concurrent callbacks from
+  PDFKit's background find queue, or a re-entrant callback such as
+  `documentDidUnlock` triggered by `unlock()` inside a delegate method, were
+  undefined behaviour.
+- `PdfDocumentFindStream` no longer uses the caller's `PDFDocument` from a
+  spawned thread while the caller keeps using it; it searches a private copy.
+- `PdfDocumentWriteOptions` redacts passwords in `Debug`, compares them without
+  an early exit, and wipes the Rust-side copies it passes to PDFKit.
+  `PdfDocument::unlock` wipes its copy of the password too.
+- A `PdfPage` keeps the document it came from alive. PDFKit only references a
+  page's document weakly, so a page that outlived every `PdfDocument` handle
+  crashed inside PDFKit (for example in `selection_for_word_at_point`).
+
+### Fixed
+
+- `selection_for_range` and `selection_from_page_characters` return `None`
+  instead of aborting the process for indexes above `i64::MAX` (such as
+  `usize::MAX`). Remote go-to page indexes saturate instead of trapping,
+  including an index that a PDF stores as a negative number.
+- Dropping a `PdfDocumentFindStream` no longer blocks until the search
+  finishes.
+- A match delivered after the delegate handle was dropped releases its
+  `PDFSelection` instead of leaking it.
+
+### Changed
+
+- **Breaking:** `PdfDocumentDelegate` requires `Send`. Delegates that hold
+  `Rc` or `RefCell` need `Arc` and `Mutex` (or similar) instead.
+- **Breaking:** `PdfDocumentWriteOptions::owner_password` and `user_password`
+  are `Option<Zeroizing<String>>`; the builder methods are unchanged, and
+  `Debug` no longer shows the passwords.
+- A delegate callback that PDFKit makes while the same thread is already
+  inside the delegate is not delivered; class-name queries then fall back to
+  the default class.
+- `PdfDocumentFindStream` searches a copy of the document taken when the
+  search starts, on a background dispatch queue, so later changes to the
+  document are not searched.
+- The docs of `number_of_characters`, `selection_for_range` and
+  `selection_from_page_characters` state that indexes count UTF-16 code units.
+- Requires `doom-fish-utils` 0.4.1 and adds a `zeroize` dependency.
+  `rust-version` is now 1.82.
+
 ## [0.3.2] - 2026-05-20
 
 - Migrated local `take_string` body to call `doom_fish_utils::ffi_string::take_owned_cstring_c`. Centralises the duplicated FFI take-string pattern fleet-wide. No public API change.

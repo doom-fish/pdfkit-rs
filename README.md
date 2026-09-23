@@ -4,6 +4,13 @@ Safe Rust bindings for Apple's [PDFKit](https://developer.apple.com/documentatio
 
 > **Status:** 0.4.0 is a soundness release. Document delegates must be `Send` and are never aliased across callbacks, the async find stream searches its own copy of the document, passwords are redacted and wiped on the Rust side, and out-of-range indexes no longer abort the process. See the [CHANGELOG](CHANGELOG.md) for the breaking changes.
 
+## Installation
+
+```toml
+[dependencies]
+pdfkit-rs = "0.4"
+```
+
 ## Requirements
 
 - macOS 11 or later. Some APIs need macOS 12, 13, 13.4 or 15; on older systems the bridge skips those write options or returns `None` or an error.
@@ -93,7 +100,7 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 Enable the `async` Cargo feature to use `pdfkit::async_api::PdfDocumentFindStream`. It copies the document when the search starts, runs `PDFDocument.findString(_:withOptions:)` on that copy on a background dispatch queue, and exposes owned match snapshots through an executor-agnostic bounded async stream. The stream keeps at most `capacity` events and overwrites the oldest when a consumer falls behind. Dropping it does not wait for the search.
 
 ```toml
-pdfkit-rs = { version = "0.3", features = ["async"] }
+pdfkit-rs = { version = "0.4", features = ["async"] }
 ```
 
 ## Examples
