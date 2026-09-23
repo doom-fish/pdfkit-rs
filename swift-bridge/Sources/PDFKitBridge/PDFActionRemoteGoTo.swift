@@ -18,7 +18,7 @@ public func pdf_action_remote_goto_new(
             throw PDFBridgeError.invalidArgument("invalid file URL string")
         }
         let action = PDFActionRemoteGoTo(
-            pageIndex: Int(pageIndex),
+            pageIndex: Int(clamping: pageIndex),
             at: CGPoint(x: x, y: y),
             fileURL: url
         )
@@ -29,13 +29,13 @@ public func pdf_action_remote_goto_new(
 @_cdecl("pdf_action_remote_goto_page_index")
 public func pdf_action_remote_goto_page_index(_ handle: UnsafeMutableRawPointer?) -> UInt64 {
     guard let action = pdf_action_remote_goto_value(handle) else { return 0 }
-    return UInt64(action.pageIndex)
+    return UInt64(UInt(bitPattern: action.pageIndex))
 }
 
 @_cdecl("pdf_action_remote_goto_set_page_index")
 public func pdf_action_remote_goto_set_page_index(_ handle: UnsafeMutableRawPointer?, _ pageIndex: UInt64) {
     guard let action = pdf_action_remote_goto_value(handle) else { return }
-    action.pageIndex = Int(pageIndex)
+    action.pageIndex = Int(clamping: pageIndex)
 }
 
 @_cdecl("pdf_action_remote_goto_point_x")

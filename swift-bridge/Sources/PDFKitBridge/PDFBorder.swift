@@ -57,7 +57,10 @@ public func pdf_border_set_dash_pattern(
             border.dashPattern = nil
             return
         }
-        let buffer = UnsafeBufferPointer(start: values, count: Int(len))
+        guard let count = Int(exactly: len) else {
+            throw PDFBridgeError.invalidArgument("dash pattern length out of range")
+        }
+        let buffer = UnsafeBufferPointer(start: values, count: count)
         border.dashPattern = buffer.map { NSNumber(value: $0) }
     }
 }

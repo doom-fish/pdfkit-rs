@@ -212,7 +212,8 @@ impl PdfDocument {
         unsafe { ObjectHandle::from_retained_ptr(ptr) }.map(PdfSelection::from_handle)
     }
 
-    /// Wraps the corresponding `PDFDocument` API.
+    /// Wraps `PDFDocument.selection(from:atCharacterIndex:to:atCharacterIndex:)`. The character
+    /// indexes count UTF-16 code units, like [`PdfPage::number_of_characters`].
     #[must_use]
     pub fn selection_from_page_characters(
         &self,

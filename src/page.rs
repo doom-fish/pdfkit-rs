@@ -71,7 +71,8 @@ impl PdfPage {
         take_string(unsafe { ffi::pdf_page_string(self.handle.as_ptr()) })
     }
 
-    /// Wraps the corresponding `PDFPage` API.
+    /// Wraps `PDFPage.numberOfCharacters`, counted in UTF-16 code units like every PDFKit
+    /// character index; it can differ from the `char` count and byte length of [`Self::string`].
     #[must_use]
     pub fn number_of_characters(&self) -> usize {
         unsafe { ffi::pdf_page_number_of_characters(self.handle.as_ptr()) as usize }
@@ -196,7 +197,8 @@ impl PdfPage {
         unsafe { ObjectHandle::from_retained_ptr(ptr) }.map(PdfAnnotation::from_handle)
     }
 
-    /// Wraps the corresponding `PDFPage` API.
+    /// Wraps `PDFPage.selection(for:)`. `location` and `length` are an `NSRange` in UTF-16 code
+    /// units (see [`Self::number_of_characters`]), not byte or `char` offsets into [`Self::string`].
     #[must_use]
     pub fn selection_for_range(&self, location: usize, length: usize) -> Option<PdfSelection> {
         let ptr = unsafe {

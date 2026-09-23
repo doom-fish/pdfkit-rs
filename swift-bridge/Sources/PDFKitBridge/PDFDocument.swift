@@ -313,11 +313,14 @@ public func pdf_document_selection_from_pages_characters(
         return nil
     }
     guard startPage.document === document, endPage.document === document else { return nil }
+    guard let startIndex = Int(exactly: startCharacter), let endIndex = Int(exactly: endCharacter) else {
+        return nil
+    }
     let selection = document.selection(
         from: startPage,
-        atCharacterIndex: Int(startCharacter),
+        atCharacterIndex: startIndex,
         to: endPage,
-        atCharacterIndex: Int(endCharacter)
+        atCharacterIndex: endIndex
     )
     return selection.map(pdf_retain_selection)
 }

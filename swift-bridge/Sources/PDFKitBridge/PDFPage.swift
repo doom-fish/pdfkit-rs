@@ -104,7 +104,7 @@ public func pdf_page_number_of_characters(_ handle: UnsafeMutableRawPointer?) ->
 @_cdecl("pdf_page_rotation")
 public func pdf_page_rotation(_ handle: UnsafeMutableRawPointer?) -> Int32 {
     guard let page = pdf_page_value(handle) else { return 0 }
-    return Int32(page.rotation)
+    return Int32(clamping: page.rotation)
 }
 
 @_cdecl("pdf_page_set_rotation")
@@ -235,7 +235,10 @@ public func pdf_page_selection_for_range(
     _ length: UInt64
 ) -> UnsafeMutableRawPointer? {
     guard let page = pdf_page_value(handle),
-          let selection = page.selection(for: NSRange(location: Int(location), length: Int(length)))
+          let location = Int(exactly: location),
+          let length = Int(exactly: length),
+          !location.addingReportingOverflow(length).overflow,
+          let selection = page.selection(for: NSRange(location: location, length: length))
     else {
         return nil
     }
