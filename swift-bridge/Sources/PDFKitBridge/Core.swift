@@ -9,7 +9,14 @@ public let PDFX_NULL_RESULT: Int32 = -2
 public let PDFX_FRAMEWORK: Int32 = -3
 
 final class PDFDocumentBox { let value: PDFDocument; init(_ value: PDFDocument) { self.value = value } }
-final class PDFPageBox { let value: PDFPage; init(_ value: PDFPage) { self.value = value } }
+final class PDFPageBox {
+    let value: PDFPage
+    private let document: PDFDocument?
+    init(_ value: PDFPage) {
+        self.value = value
+        self.document = value.document
+    }
+}
 final class PDFAnnotationBox { let value: PDFAnnotation; init(_ value: PDFAnnotation) { self.value = value } }
 final class PDFOutlineBox { let value: PDFOutline; init(_ value: PDFOutline) { self.value = value } }
 final class PDFSelectionBox { let value: PDFSelection; init(_ value: PDFSelection) { self.value = value } }

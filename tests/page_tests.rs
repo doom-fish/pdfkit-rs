@@ -44,3 +44,19 @@ fn empty_page_mutation_roundtrip() -> Result<()> {
     assert!((page.bounds(DisplayBox::MediaBox).width - 200.0).abs() < f64::EPSILON);
     Ok(())
 }
+
+#[test]
+fn page_keeps_its_document_alive_after_the_document_handle_is_dropped() -> Result<()> {
+    let page = {
+        let document = common::fixture_document()?;
+        document.page(0).expect("page")
+    };
+
+    assert_eq!(page.document().map(|document| document.page_count()), Some(1));
+    assert_eq!(
+        page.selection_for_word_at_point(common::word_point())
+            .and_then(|selection| selection.string()),
+        Some("Hello".to_string())
+    );
+    Ok(())
+}
