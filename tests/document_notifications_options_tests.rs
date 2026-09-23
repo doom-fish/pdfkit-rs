@@ -87,8 +87,14 @@ fn notifications_new_enums_and_write_options_builders_are_exposed() {
         .with_save_text_from_ocr(true)
         .with_save_images_as_jpeg(true)
         .with_optimize_images_for_screen(true);
-    assert_eq!(options.owner_password.as_deref(), Some("owner"));
-    assert_eq!(options.user_password.as_deref(), Some("user"));
+    assert_eq!(
+        options.owner_password.as_deref().map(String::as_str),
+        Some("owner")
+    );
+    assert_eq!(
+        options.user_password.as_deref().map(String::as_str),
+        Some("user")
+    );
     assert_eq!(options.access_permissions, Some(1));
     assert!(options.burn_in_annotations);
     assert!(options.save_text_from_ocr);

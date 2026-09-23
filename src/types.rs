@@ -1,6 +1,8 @@
+use std::fmt;
 use std::ops::{BitAnd, BitAndAssign, BitOr, BitOrAssign};
 
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize, Serializer};
+use zeroize::Zeroizing;
 
 /// Wraps `CGRect` values used by PDFKit geometry APIs.
 #[derive(Debug, Clone, Copy, PartialEq, Deserialize, Serialize)]
@@ -698,12 +700,14 @@ impl PdfPageImageInitializationOptions {
 }
 
 /// Builder-style options for the corresponding `PDFDocumentWrite` API.
-#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize)]
+#[derive(Clone, Default, Serialize)]
 pub struct PdfDocumentWriteOptions {
     /// Mirrors the corresponding `PDFDocument` field.
-    pub owner_password: Option<String>,
+    #[serde(serialize_with = "serialize_secret")]
+    pub owner_password: Option<Zeroizing<String>>,
     /// Mirrors the corresponding `PDFDocument` field.
-    pub user_password: Option<String>,
+    #[serde(serialize_with = "serialize_secret")]
+    pub user_password: Option<Zeroizing<String>>,
     /// Mirrors the corresponding `PDFDocument` field.
     pub access_permissions: Option<u64>,
     /// Mirrors the corresponding `PDFDocument` field.
@@ -719,13 +723,13 @@ pub struct PdfDocumentWriteOptions {
 impl PdfDocumentWriteOptions {
     /// Sets the corresponding `PDFDocumentWrite` option and returns the builder.
     pub fn with_owner_password(mut self, value: impl Into<String>) -> Self {
-        self.owner_password = Some(value.into());
+        self.owner_password = Some(Zeroizing::new(value.into()));
         self
     }
 
     /// Sets the corresponding `PDFDocumentWrite` option and returns the builder.
     pub fn with_user_password(mut self, value: impl Into<String>) -> Self {
-        self.user_password = Some(value.into());
+        self.user_password = Some(Zeroizing::new(value.into()));
         self
     }
 
@@ -757,6 +761,75 @@ impl PdfDocumentWriteOptions {
     pub fn with_optimize_images_for_screen(mut self, value: bool) -> Self {
         self.optimize_images_for_screen = value;
         self
+    }
+}
+
+impl fmt::Debug for PdfDocumentWriteOptions {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("PdfDocumentWriteOptions")
+            .field(
+                "owner_password",
+                &self.owner_password.as_ref().map(|_| "<redacted>"),
+            )
+            .field(
+                "user_password",
+                &self.user_password.as_ref().map(|_| "<redacted>"),
+            )
+            .field("access_permissions", &self.access_permissions)
+            .field("burn_in_annotations", &self.burn_in_annotations)
+            .field("save_text_from_ocr", &self.save_text_from_ocr)
+            .field("save_images_as_jpeg", &self.save_images_as_jpeg)
+            .field(
+                "optimize_images_for_screen",
+                &self.optimize_images_for_screen,
+            )
+            .finish()
+    }
+}
+
+impl PartialEq for PdfDocumentWriteOptions {
+    fn eq(&self, other: &Self) -> bool {
+        let passwords_equal = secrets_equal(
+            self.owner_password.as_deref(),
+            other.owner_password.as_deref(),
+        ) & secrets_equal(
+            self.user_password.as_deref(),
+            other.user_password.as_deref(),
+        );
+        passwords_equal
+            && self.access_permissions == other.access_permissions
+            && self.burn_in_annotations == other.burn_in_annotations
+            && self.save_text_from_ocr == other.save_text_from_ocr
+            && self.save_images_as_jpeg == other.save_images_as_jpeg
+            && self.optimize_images_for_screen == other.optimize_images_for_screen
+    }
+}
+
+impl Eq for PdfDocumentWriteOptions {}
+
+fn secrets_equal(left: Option<&String>, right: Option<&String>) -> bool {
+    match (left, right) {
+        (Some(left), Some(right)) => {
+            left.len() == right.len()
+                && left
+                    .bytes()
+                    .zip(right.bytes())
+                    .fold(0_u8, |difference, (a, b)| difference | (a ^ b))
+                    == 0
+        }
+        (None, None) => true,
+        _ => false,
+    }
+}
+
+#[allow(clippy::ref_option)]
+fn serialize_secret<S: Serializer>(
+    value: &Option<Zeroizing<String>>,
+    serializer: S,
+) -> Result<S::Ok, S::Error> {
+    match value {
+        Some(secret) => serializer.serialize_some(secret.as_str()),
+        None => serializer.serialize_none(),
     }
 }
 
@@ -1088,12 +1161,65 @@ mod tests {
                 .expect("compression quality should be set"),
             0.8,
         );
-        assert_eq!(write_options.owner_password.as_deref(), Some("owner"));
-        assert_eq!(write_options.user_password.as_deref(), Some("user"));
+        assert_eq!(
+            write_options.owner_password.as_deref().map(String::as_str),
+            Some("owner")
+        );
+        assert_eq!(
+            write_options.user_password.as_deref().map(String::as_str),
+            Some("user")
+        );
         assert_eq!(write_options.access_permissions, Some(0x15));
         assert!(write_options.burn_in_annotations);
         assert!(write_options.save_text_from_ocr);
         assert!(write_options.save_images_as_jpeg);
         assert!(write_options.optimize_images_for_screen);
+    }
+
+    #[test]
+    fn write_options_debug_redacts_passwords() {
+        let options = PdfDocumentWriteOptions::default()
+            .with_owner_password("owner-secret")
+            .with_user_password("user-secret");
+
+        let debug = format!("{options:?}");
+
+        assert!(!debug.contains("owner-secret"), "{debug}");
+        assert!(!debug.contains("user-secret"), "{debug}");
+        assert!(debug.contains("<redacted>"), "{debug}");
+        assert!(format!("{:?}", PdfDocumentWriteOptions::default()).contains("None"));
+    }
+
+    #[test]
+    fn write_options_equality_compares_every_field() {
+        let options = PdfDocumentWriteOptions::default()
+            .with_owner_password("owner")
+            .with_user_password("user")
+            .with_access_permissions(4);
+
+        assert_eq!(options, options.clone());
+        assert_ne!(options, options.clone().with_owner_password("0wner"));
+        assert_ne!(options, options.clone().with_user_password("users"));
+        assert_ne!(options, options.clone().with_access_permissions(5));
+        assert_ne!(
+            options,
+            PdfDocumentWriteOptions {
+                user_password: None,
+                ..options.clone()
+            }
+        );
+        assert_eq!(
+            PdfDocumentWriteOptions::default(),
+            PdfDocumentWriteOptions::default()
+        );
+    }
+
+    #[test]
+    fn write_options_serialize_passwords_for_the_bridge() {
+        let options = PdfDocumentWriteOptions::default().with_user_password("user");
+        let json: serde_json::Value = serde_json::to_value(&options).unwrap();
+
+        assert_eq!(json["user_password"], "user");
+        assert!(json["owner_password"].is_null());
     }
 }

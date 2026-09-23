@@ -1,5 +1,8 @@
+use std::os::raw::c_char;
 use std::path::Path;
 use std::ptr;
+
+use zeroize::Zeroizing;
 
 use crate::document_delegate::PdfDocumentDelegateHandle;
 use crate::error::{PdfKitError, Result};
@@ -12,7 +15,7 @@ use crate::types::{
     PdfDocumentAttributes, PdfDocumentInfo, PdfDocumentWriteOptions, PdfPoint,
     PdfSelectionGranularity,
 };
-use crate::util::{c_string, parse_json, path_to_c_string, required_handle, take_string};
+use crate::util::{parse_json, path_to_c_string, required_handle, secret_c_string, take_string};
 
 /// Wraps `PDFDocument`.
 #[derive(Debug, Clone)]
@@ -232,8 +235,10 @@ impl PdfDocument {
 
     /// Wraps the corresponding `PDFDocument` API.
     pub fn unlock(&self, password: &str) -> Result<bool> {
-        let password = c_string(password)?;
-        Ok(unsafe { ffi::pdf_document_unlock(self.handle.as_ptr(), password.as_ptr()) != 0 })
+        let password = secret_c_string(password)?;
+        Ok(unsafe {
+            ffi::pdf_document_unlock(self.handle.as_ptr(), password.as_ptr().cast::<c_char>()) != 0
+        })
     }
 
     /// Wraps the corresponding `PDFDocument` API.
@@ -266,19 +271,32 @@ impl PdfDocument {
         options: &PdfDocumentWriteOptions,
     ) -> Result<()> {
         let path = path_to_c_string(path.as_ref())?;
-        let options_json = serde_json::to_string(options).map_err(|error| {
+        let secret_len = options.owner_password.as_ref().map_or(0, |value| value.len())
+            + options.user_password.as_ref().map_or(0, |value| value.len());
+        let mut options_json = Zeroizing::new(Vec::new());
+        secret_len
+            .checked_mul(6)
+            .and_then(|len| len.checked_add(512))
+            .and_then(|capacity| options_json.try_reserve_exact(capacity).ok())
+            .ok_or_else(|| {
+                PdfKitError::new(
+                    ffi::status::INVALID_ARGUMENT,
+                    "PDFDocument write options are too large",
+                )
+            })?;
+        serde_json::to_writer(&mut *options_json, options).map_err(|error| {
             PdfKitError::new(
                 ffi::status::FRAMEWORK,
                 format!("failed to encode PDFDocument write options: {error}"),
             )
         })?;
-        let options_json = c_string(&options_json)?;
+        options_json.push(0);
         let mut out_error = ptr::null_mut();
         let status = unsafe {
             ffi::pdf_document_write_to_url_with_options(
                 self.handle.as_ptr(),
                 path.as_ptr(),
-                options_json.as_ptr(),
+                options_json.as_ptr().cast::<c_char>(),
                 &mut out_error,
             )
         };

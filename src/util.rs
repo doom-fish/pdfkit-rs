@@ -3,6 +3,7 @@ use std::os::raw::{c_char, c_void};
 use std::path::Path;
 
 use serde::de::DeserializeOwned;
+use zeroize::Zeroizing;
 
 use crate::error::{PdfKitError, Result};
 use crate::ffi;
@@ -14,6 +15,22 @@ pub(crate) fn c_string(value: &str) -> Result<CString> {
             "string contained interior NUL",
         )
     })
+}
+
+pub(crate) fn secret_c_string(value: &str) -> Result<Zeroizing<Vec<u8>>> {
+    if value.as_bytes().contains(&0) {
+        return Err(PdfKitError::new(
+            ffi::status::INVALID_ARGUMENT,
+            "string contained interior NUL",
+        ));
+    }
+    let mut bytes = Zeroizing::new(Vec::new());
+    bytes.try_reserve_exact(value.len() + 1).map_err(|_| {
+        PdfKitError::new(ffi::status::INVALID_ARGUMENT, "string is too long")
+    })?;
+    bytes.extend_from_slice(value.as_bytes());
+    bytes.push(0);
+    Ok(bytes)
 }
 
 pub(crate) fn option_c_string(value: Option<&str>) -> Result<Option<CString>> {
