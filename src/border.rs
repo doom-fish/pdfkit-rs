@@ -21,7 +21,7 @@ impl PdfBorder {
     pub fn new() -> Result<Self> {
         let mut out_border = ptr::null_mut();
         let mut out_error = ptr::null_mut();
-        let status = unsafe { ffi::pdf_border_new(&mut out_border, &mut out_error) };
+        let status = unsafe { ffi::pdf_border_new(&raw mut out_border, &raw mut out_error) };
         crate::util::status_result(status, out_error)?;
         Ok(Self::from_handle(crate::util::required_handle(
             out_border,
@@ -41,7 +41,7 @@ impl PdfBorder {
     pub fn set_style(&self, style: PdfBorderStyle) -> Result<()> {
         let mut out_error = ptr::null_mut();
         let status = unsafe {
-            ffi::pdf_border_set_style(self.handle.as_ptr(), style as i32, &mut out_error)
+            ffi::pdf_border_set_style(self.handle.as_ptr(), style as i32, &raw mut out_error)
         };
         crate::util::status_result(status, out_error)
     }
@@ -58,7 +58,7 @@ impl PdfBorder {
             (values.as_ptr(), values.len() as u64)
         });
         let status = unsafe {
-            ffi::pdf_border_set_dash_pattern(self.handle.as_ptr(), values, len, &mut out_error)
+            ffi::pdf_border_set_dash_pattern(self.handle.as_ptr(), values, len, &raw mut out_error)
         };
         crate::util::status_result(status, out_error)
     }

@@ -34,8 +34,8 @@ impl PdfAnnotation {
                 bounds.width,
                 bounds.height,
                 annotation_type.as_ptr(),
-                &mut out_annotation,
-                &mut out_error,
+                &raw mut out_annotation,
+                &raw mut out_error,
             )
         };
         crate::util::status_result(status, out_error)?;
@@ -60,8 +60,8 @@ impl PdfAnnotation {
                 bounds.width,
                 bounds.height,
                 annotation_type.as_ptr(),
-                &mut out_annotation,
-                &mut out_error,
+                &raw mut out_annotation,
+                &raw mut out_error,
             )
         };
         crate::util::status_result(status, out_error)?;
@@ -87,7 +87,7 @@ impl PdfAnnotation {
             ffi::pdf_annotation_set_contents(
                 self.handle.as_ptr(),
                 value.as_ref().map_or(ptr::null(), |value| value.as_ptr()),
-                &mut out_error,
+                &raw mut out_error,
             )
         };
         crate::util::status_result(status, out_error)
@@ -112,7 +112,7 @@ impl PdfAnnotation {
             ffi::pdf_annotation_set_border(
                 self.handle.as_ptr(),
                 border.map_or(ptr::null_mut(), PdfBorder::as_handle_ptr),
-                &mut out_error,
+                &raw mut out_error,
             )
         };
         crate::util::status_result(status, out_error)
@@ -132,7 +132,7 @@ impl PdfAnnotation {
             ffi::pdf_annotation_set_action(
                 self.handle.as_ptr(),
                 action.map_or(ptr::null_mut(), PdfActionLike::as_action_handle_ptr),
-                &mut out_error,
+                &raw mut out_error,
             )
         };
         crate::util::status_result(status, out_error)

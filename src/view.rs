@@ -30,8 +30,14 @@ impl PdfView {
     pub fn new(size: PdfSize) -> Result<Self> {
         let mut out_view = ptr::null_mut();
         let mut out_error = ptr::null_mut();
-        let status =
-            unsafe { ffi::pdf_view_new(size.width, size.height, &mut out_view, &mut out_error) };
+        let status = unsafe {
+            ffi::pdf_view_new(
+                size.width,
+                size.height,
+                &raw mut out_view,
+                &raw mut out_error,
+            )
+        };
         crate::util::status_result(status, out_error)?;
         Ok(Self::from_handle(crate::util::required_handle(
             out_view, "PDFView",
@@ -60,7 +66,7 @@ impl PdfView {
             ffi::pdf_view_set_document(
                 self.handle.as_ptr(),
                 document.map_or(ptr::null_mut(), PdfDocument::as_handle_ptr),
-                &mut out_error,
+                &raw mut out_error,
             )
         };
         crate::util::status_result(status, out_error)
@@ -73,7 +79,7 @@ impl PdfView {
             ffi::pdf_view_set_delegate(
                 self.handle.as_ptr(),
                 delegate.map_or(ptr::null_mut(), PdfViewDelegateHandle::as_handle_ptr),
-                &mut out_error,
+                &raw mut out_error,
             )
         };
         crate::util::status_result(status, out_error)
@@ -92,7 +98,7 @@ impl PdfView {
                     ptr::null_mut(),
                     PdfPageOverlayViewProviderHandle::as_handle_ptr,
                 ),
-                &mut out_error,
+                &raw mut out_error,
             )
         };
         crate::util::status_result(status, out_error)
@@ -131,7 +137,7 @@ impl PdfView {
                 self.handle.as_ptr(),
                 selection.map_or(ptr::null_mut(), PdfSelection::as_handle_ptr),
                 i32::from(animate),
-                &mut out_error,
+                &raw mut out_error,
             )
         };
         crate::util::status_result(status, out_error)
@@ -146,7 +152,11 @@ impl PdfView {
     pub fn go_to_page(&self, page: &PdfPage) -> Result<()> {
         let mut out_error = ptr::null_mut();
         let status = unsafe {
-            ffi::pdf_view_go_to_page(self.handle.as_ptr(), page.as_handle_ptr(), &mut out_error)
+            ffi::pdf_view_go_to_page(
+                self.handle.as_ptr(),
+                page.as_handle_ptr(),
+                &raw mut out_error,
+            )
         };
         crate::util::status_result(status, out_error)
     }
@@ -158,7 +168,7 @@ impl PdfView {
             ffi::pdf_view_go_to_destination(
                 self.handle.as_ptr(),
                 destination.as_handle_ptr(),
-                &mut out_error,
+                &raw mut out_error,
             )
         };
         crate::util::status_result(status, out_error)
@@ -171,7 +181,7 @@ impl PdfView {
             ffi::pdf_view_go_to_selection(
                 self.handle.as_ptr(),
                 selection.as_handle_ptr(),
-                &mut out_error,
+                &raw mut out_error,
             )
         };
         crate::util::status_result(status, out_error)
@@ -181,7 +191,7 @@ impl PdfView {
     pub fn set_display_mode(&self, mode: PdfDisplayMode) -> Result<()> {
         let mut out_error = ptr::null_mut();
         let status = unsafe {
-            ffi::pdf_view_set_display_mode(self.handle.as_ptr(), mode as i32, &mut out_error)
+            ffi::pdf_view_set_display_mode(self.handle.as_ptr(), mode as i32, &raw mut out_error)
         };
         crate::util::status_result(status, out_error)
     }
@@ -193,7 +203,7 @@ impl PdfView {
             ffi::pdf_view_set_display_direction(
                 self.handle.as_ptr(),
                 direction as i32,
-                &mut out_error,
+                &raw mut out_error,
             )
         };
         crate::util::status_result(status, out_error)
@@ -206,7 +216,7 @@ impl PdfView {
             ffi::pdf_view_set_display_box(
                 self.handle.as_ptr(),
                 display_box.as_raw(),
-                &mut out_error,
+                &raw mut out_error,
             )
         };
         crate::util::status_result(status, out_error)

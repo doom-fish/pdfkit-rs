@@ -22,7 +22,12 @@ impl PdfPageOverlayView {
         let mut out_view = ptr::null_mut();
         let mut out_error = ptr::null_mut();
         let status = unsafe {
-            ffi::pdf_page_overlay_view_new(size.width, size.height, &mut out_view, &mut out_error)
+            ffi::pdf_page_overlay_view_new(
+                size.width,
+                size.height,
+                &raw mut out_view,
+                &raw mut out_error,
+            )
         };
         crate::util::status_result(status, out_error)?;
         Ok(Self::from_handle(crate::util::required_handle(

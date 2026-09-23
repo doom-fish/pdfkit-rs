@@ -24,7 +24,12 @@ impl PdfThumbnailView {
         let mut out_view = ptr::null_mut();
         let mut out_error = ptr::null_mut();
         let status = unsafe {
-            ffi::pdf_thumbnail_view_new(size.width, size.height, &mut out_view, &mut out_error)
+            ffi::pdf_thumbnail_view_new(
+                size.width,
+                size.height,
+                &raw mut out_view,
+                &raw mut out_error,
+            )
         };
         crate::util::status_result(status, out_error)?;
         Ok(Self::from_handle(crate::util::required_handle(
@@ -55,7 +60,7 @@ impl PdfThumbnailView {
             ffi::pdf_thumbnail_view_set_pdf_view(
                 self.handle.as_ptr(),
                 pdf_view.map_or(ptr::null_mut(), PdfView::as_handle_ptr),
-                &mut out_error,
+                &raw mut out_error,
             )
         };
         crate::util::status_result(status, out_error)

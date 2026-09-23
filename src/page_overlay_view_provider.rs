@@ -65,8 +65,8 @@ impl PdfPageOverlayViewProviderHandle {
                 Some(pdf_page_overlay_view_provider_overlay_trampoline),
                 Some(pdf_page_overlay_view_provider_will_display_trampoline),
                 Some(pdf_page_overlay_view_provider_will_end_displaying_trampoline),
-                &mut out_provider,
-                &mut out_error,
+                &raw mut out_provider,
+                &raw mut out_error,
             )
         };
         crate::util::status_result(status, out_error)?;

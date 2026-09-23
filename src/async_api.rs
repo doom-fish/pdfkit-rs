@@ -165,7 +165,7 @@ impl PdfDocumentFindStream {
                 sink.as_ptr(),
                 FindSink::RETAIN,
                 FindSink::RELEASE,
-                &mut out_error,
+                &raw mut out_error,
             )
         };
         util::status_result(status, out_error)?;

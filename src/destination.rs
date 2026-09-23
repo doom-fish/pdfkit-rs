@@ -31,8 +31,8 @@ impl PdfDestination {
                 page.as_handle_ptr(),
                 point.x,
                 point.y,
-                &mut out_destination,
-                &mut out_error,
+                &raw mut out_destination,
+                &raw mut out_error,
             )
         };
         crate::util::status_result(status, out_error)?;

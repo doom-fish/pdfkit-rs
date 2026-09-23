@@ -81,8 +81,8 @@ impl PdfViewDelegateHandle {
                 Some(pdf_view_delegate_perform_find_trampoline),
                 Some(pdf_view_delegate_perform_go_to_page_trampoline),
                 Some(pdf_view_delegate_remote_goto_trampoline),
-                &mut out_delegate,
-                &mut out_error,
+                &raw mut out_delegate,
+                &raw mut out_error,
             )
         };
         crate::util::status_result(status, out_error)?;

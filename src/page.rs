@@ -23,7 +23,7 @@ impl PdfPage {
     pub fn new() -> Result<Self> {
         let mut out_page = ptr::null_mut();
         let mut out_error = ptr::null_mut();
-        let status = unsafe { ffi::pdf_page_new(&mut out_page, &mut out_error) };
+        let status = unsafe { ffi::pdf_page_new(&raw mut out_page, &raw mut out_error) };
         crate::util::status_result(status, out_error)?;
         Ok(Self::from_handle(crate::util::required_handle(
             out_page, "PDFPage",
@@ -49,8 +49,8 @@ impl PdfPage {
                 image_data.as_ptr(),
                 image_data.len(),
                 options_json.as_ptr(),
-                &mut out_page,
-                &mut out_error,
+                &raw mut out_page,
+                &raw mut out_error,
             )
         };
         crate::util::status_result(status, out_error)?;
@@ -87,8 +87,9 @@ impl PdfPage {
     /// Wraps the corresponding `PDFPage` API.
     pub fn set_rotation(&self, rotation: i32) -> Result<()> {
         let mut out_error = ptr::null_mut();
-        let status =
-            unsafe { ffi::pdf_page_set_rotation(self.handle.as_ptr(), rotation, &mut out_error) };
+        let status = unsafe {
+            ffi::pdf_page_set_rotation(self.handle.as_ptr(), rotation, &raw mut out_error)
+        };
         crate::util::status_result(status, out_error)
     }
 
@@ -103,10 +104,10 @@ impl PdfPage {
             ffi::pdf_page_bounds(
                 self.handle.as_ptr(),
                 display_box.as_raw(),
-                &mut x,
-                &mut y,
-                &mut width,
-                &mut height,
+                &raw mut x,
+                &raw mut y,
+                &raw mut width,
+                &raw mut height,
             );
         }
         PdfRect {
@@ -128,7 +129,7 @@ impl PdfPage {
                 bounds.y,
                 bounds.width,
                 bounds.height,
-                &mut out_error,
+                &raw mut out_error,
             )
         };
         crate::util::status_result(status, out_error)
@@ -170,7 +171,7 @@ impl PdfPage {
             ffi::pdf_page_add_annotation(
                 self.handle.as_ptr(),
                 annotation.as_handle_ptr(),
-                &mut out_error,
+                &raw mut out_error,
             )
         };
         crate::util::status_result(status, out_error)
@@ -183,7 +184,7 @@ impl PdfPage {
             ffi::pdf_page_remove_annotation(
                 self.handle.as_ptr(),
                 annotation.as_handle_ptr(),
-                &mut out_error,
+                &raw mut out_error,
             )
         };
         crate::util::status_result(status, out_error)
@@ -266,10 +267,10 @@ impl PdfPage {
             ffi::pdf_page_character_bounds_at(
                 self.handle.as_ptr(),
                 index as u64,
-                &mut x,
-                &mut y,
-                &mut width,
-                &mut height,
+                &raw mut x,
+                &raw mut y,
+                &raw mut width,
+                &raw mut height,
             );
         }
         PdfRect {

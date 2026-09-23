@@ -24,7 +24,11 @@ impl PdfSelection {
         let mut out_selection = ptr::null_mut();
         let mut out_error = ptr::null_mut();
         let status = unsafe {
-            ffi::pdf_selection_new(document.as_handle_ptr(), &mut out_selection, &mut out_error)
+            ffi::pdf_selection_new(
+                document.as_handle_ptr(),
+                &raw mut out_selection,
+                &raw mut out_error,
+            )
         };
         crate::util::status_result(status, out_error)?;
         Ok(Self::from_handle(crate::util::required_handle(
@@ -71,10 +75,10 @@ impl PdfSelection {
             ffi::pdf_selection_bounds_for_page(
                 self.handle.as_ptr(),
                 page.as_handle_ptr(),
-                &mut x,
-                &mut y,
-                &mut width,
-                &mut height,
+                &raw mut x,
+                &raw mut y,
+                &raw mut width,
+                &raw mut height,
             );
         }
         PdfRect {
@@ -106,8 +110,8 @@ impl PdfSelection {
                 self.handle.as_ptr(),
                 index as u64,
                 page.as_handle_ptr(),
-                &mut location,
-                &mut length,
+                &raw mut location,
+                &raw mut length,
             ) != 0
         };
         ok.then_some(PdfTextRange {
@@ -145,7 +149,7 @@ impl PdfSelection {
             ffi::pdf_selection_add_selection(
                 self.handle.as_ptr(),
                 other.handle.as_ptr(),
-                &mut out_error,
+                &raw mut out_error,
             )
         };
         crate::util::status_result(status, out_error)

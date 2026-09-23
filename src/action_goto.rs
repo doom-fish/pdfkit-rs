@@ -23,7 +23,11 @@ impl PdfActionGoTo {
         let mut out_action = ptr::null_mut();
         let mut out_error = ptr::null_mut();
         let status = unsafe {
-            ffi::pdf_action_goto_new(destination.as_handle_ptr(), &mut out_action, &mut out_error)
+            ffi::pdf_action_goto_new(
+                destination.as_handle_ptr(),
+                &raw mut out_action,
+                &raw mut out_error,
+            )
         };
         crate::util::status_result(status, out_error)?;
         Ok(Self::from_handle(crate::util::required_handle(
@@ -46,7 +50,7 @@ impl PdfActionGoTo {
             ffi::pdf_action_goto_set_destination(
                 self.handle.as_ptr(),
                 destination.as_handle_ptr(),
-                &mut out_error,
+                &raw mut out_error,
             )
         };
         crate::util::status_result(status, out_error)

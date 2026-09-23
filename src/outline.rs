@@ -24,7 +24,7 @@ impl PdfOutline {
     pub fn new() -> Result<Self> {
         let mut out_outline = ptr::null_mut();
         let mut out_error = ptr::null_mut();
-        let status = unsafe { ffi::pdf_outline_new(&mut out_outline, &mut out_error) };
+        let status = unsafe { ffi::pdf_outline_new(&raw mut out_outline, &raw mut out_error) };
         crate::util::status_result(status, out_error)?;
         Ok(Self::from_handle(crate::util::required_handle(
             out_outline,
@@ -46,7 +46,7 @@ impl PdfOutline {
             ffi::pdf_outline_set_label(
                 self.handle.as_ptr(),
                 value.as_ref().map_or(ptr::null(), |value| value.as_ptr()),
-                &mut out_error,
+                &raw mut out_error,
             )
         };
         crate::util::status_result(status, out_error)
@@ -81,7 +81,7 @@ impl PdfOutline {
                 self.handle.as_ptr(),
                 child.handle.as_ptr(),
                 index as u64,
-                &mut out_error,
+                &raw mut out_error,
             )
         };
         crate::util::status_result(status, out_error)
@@ -123,7 +123,7 @@ impl PdfOutline {
             ffi::pdf_outline_set_destination(
                 self.handle.as_ptr(),
                 destination.map_or(ptr::null_mut(), PdfDestination::as_handle_ptr),
-                &mut out_error,
+                &raw mut out_error,
             )
         };
         crate::util::status_result(status, out_error)
@@ -143,7 +143,7 @@ impl PdfOutline {
             ffi::pdf_outline_set_action(
                 self.handle.as_ptr(),
                 action.map_or(ptr::null_mut(), PdfActionLike::as_action_handle_ptr),
-                &mut out_error,
+                &raw mut out_error,
             )
         };
         crate::util::status_result(status, out_error)

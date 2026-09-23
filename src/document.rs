@@ -32,7 +32,7 @@ impl PdfDocument {
     pub fn new() -> Result<Self> {
         let mut out_document = ptr::null_mut();
         let mut out_error = ptr::null_mut();
-        let status = unsafe { ffi::pdf_document_new(&mut out_document, &mut out_error) };
+        let status = unsafe { ffi::pdf_document_new(&raw mut out_document, &raw mut out_error) };
         crate::util::status_result(status, out_error)?;
         Ok(Self::from_handle(required_handle(
             out_document,
@@ -46,7 +46,7 @@ impl PdfDocument {
         let mut out_document = ptr::null_mut();
         let mut out_error = ptr::null_mut();
         let status = unsafe {
-            ffi::pdf_document_new_with_url(path.as_ptr(), &mut out_document, &mut out_error)
+            ffi::pdf_document_new_with_url(path.as_ptr(), &raw mut out_document, &raw mut out_error)
         };
         crate::util::status_result(status, out_error)?;
         Ok(Self::from_handle(required_handle(
@@ -63,8 +63,8 @@ impl PdfDocument {
             ffi::pdf_document_new_with_data(
                 bytes.as_ptr(),
                 bytes.len(),
-                &mut out_document,
-                &mut out_error,
+                &raw mut out_document,
+                &raw mut out_error,
             )
         };
         crate::util::status_result(status, out_error)?;
@@ -139,7 +139,7 @@ impl PdfDocument {
             ffi::pdf_document_set_outline_root(
                 self.handle.as_ptr(),
                 outline.map_or(ptr::null_mut(), PdfOutline::as_handle_ptr),
-                &mut out_error,
+                &raw mut out_error,
             )
         };
         crate::util::status_result(status, out_error)
@@ -249,7 +249,7 @@ impl PdfDocument {
             ffi::pdf_document_set_delegate(
                 self.handle.as_ptr(),
                 delegate.map_or(ptr::null_mut(), PdfDocumentDelegateHandle::as_handle_ptr),
-                &mut out_error,
+                &raw mut out_error,
             )
         };
         crate::util::status_result(status, out_error)
@@ -260,7 +260,7 @@ impl PdfDocument {
         let path = path_to_c_string(path.as_ref())?;
         let mut out_error = ptr::null_mut();
         let status = unsafe {
-            ffi::pdf_document_write_to_url(self.handle.as_ptr(), path.as_ptr(), &mut out_error)
+            ffi::pdf_document_write_to_url(self.handle.as_ptr(), path.as_ptr(), &raw mut out_error)
         };
         crate::util::status_result(status, out_error)
     }
@@ -298,7 +298,7 @@ impl PdfDocument {
                 self.handle.as_ptr(),
                 path.as_ptr(),
                 options_json.as_ptr().cast::<c_char>(),
-                &mut out_error,
+                &raw mut out_error,
             )
         };
         crate::util::status_result(status, out_error)
@@ -312,7 +312,7 @@ impl PdfDocument {
                 self.handle.as_ptr(),
                 page.as_handle_ptr(),
                 index as u64,
-                &mut out_error,
+                &raw mut out_error,
             )
         };
         crate::util::status_result(status, out_error)
@@ -322,7 +322,7 @@ impl PdfDocument {
     pub fn remove_page(&self, index: usize) -> Result<()> {
         let mut out_error = ptr::null_mut();
         let status = unsafe {
-            ffi::pdf_document_remove_page_at(self.handle.as_ptr(), index as u64, &mut out_error)
+            ffi::pdf_document_remove_page_at(self.handle.as_ptr(), index as u64, &raw mut out_error)
         };
         crate::util::status_result(status, out_error)
     }
@@ -335,7 +335,7 @@ impl PdfDocument {
                 self.handle.as_ptr(),
                 index_a as u64,
                 index_b as u64,
-                &mut out_error,
+                &raw mut out_error,
             )
         };
         crate::util::status_result(status, out_error)

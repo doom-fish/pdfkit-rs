@@ -29,8 +29,8 @@ impl PdfActionRemoteGoTo {
                 point.x,
                 point.y,
                 url.as_ptr(),
-                &mut out_action,
-                &mut out_error,
+                &raw mut out_action,
+                &raw mut out_error,
             )
         };
         crate::util::status_result(status, out_error)?;
@@ -78,7 +78,11 @@ impl PdfActionRemoteGoTo {
         let url = c_string(url)?;
         let mut out_error = ptr::null_mut();
         let status = unsafe {
-            ffi::pdf_action_remote_goto_set_url(self.handle.as_ptr(), url.as_ptr(), &mut out_error)
+            ffi::pdf_action_remote_goto_set_url(
+                self.handle.as_ptr(),
+                url.as_ptr(),
+                &raw mut out_error,
+            )
         };
         crate::util::status_result(status, out_error)
     }

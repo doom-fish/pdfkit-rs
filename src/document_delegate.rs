@@ -84,8 +84,8 @@ impl PdfDocumentDelegateHandle {
                 Some(pdf_document_delegate_annotation_class_name_trampoline),
                 DelegateContext::RETAIN,
                 DelegateContext::RELEASE,
-                &mut out_delegate,
-                &mut out_error,
+                &raw mut out_delegate,
+                &raw mut out_error,
             )
         };
         crate::util::status_result(status, out_error)?;
