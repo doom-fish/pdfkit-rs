@@ -1,7 +1,6 @@
 mod common;
 
-use std::cell::RefCell;
-use std::rc::Rc;
+use std::sync::{Arc, Mutex};
 
 use pdfkit::prelude::*;
 
@@ -12,18 +11,18 @@ struct DelegateCounts {
 }
 
 struct CountingDelegate {
-    counts: Rc<RefCell<DelegateCounts>>,
+    counts: Arc<Mutex<DelegateCounts>>,
 }
 
 impl PdfDocumentDelegate for CountingDelegate {
     fn page_class_name(&mut self) -> Option<String> {
-        self.counts.borrow_mut().page_class_requests += 1;
+        self.counts.lock().unwrap().page_class_requests += 1;
         Some("PDFPage".to_string())
     }
 
     fn annotation_class_name(&mut self, annotation_type: &str) -> Option<String> {
         if annotation_type == "Link" {
-            self.counts.borrow_mut().annotation_class_requests += 1;
+            self.counts.lock().unwrap().annotation_class_requests += 1;
             Some("PDFAnnotation".to_string())
         } else {
             None
@@ -41,9 +40,9 @@ fn document_delegate_can_override_page_and_annotation_classes() -> Result<()> {
     let output = common::output_path("document-delegate.pdf");
     source.write_to_url(&output)?;
 
-    let counts = Rc::new(RefCell::new(DelegateCounts::default()));
+    let counts = Arc::new(Mutex::new(DelegateCounts::default()));
     let delegate = PdfDocumentDelegateHandle::new(CountingDelegate {
-        counts: Rc::clone(&counts),
+        counts: Arc::clone(&counts),
     })?;
 
     let document = PdfDocument::from_url(&output)?;
@@ -56,7 +55,7 @@ fn document_delegate_can_override_page_and_annotation_classes() -> Result<()> {
         Some("Link")
     );
 
-    let counts = counts.borrow();
+    let counts = counts.lock().unwrap();
     assert!(counts.page_class_requests > 0);
     assert!(counts.annotation_class_requests > 0);
     Ok(())

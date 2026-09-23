@@ -1,8 +1,7 @@
 #[path = "common/mod.rs"]
 mod support;
 
-use std::cell::RefCell;
-use std::rc::Rc;
+use std::sync::{Arc, Mutex};
 
 use pdfkit::prelude::*;
 
@@ -12,20 +11,20 @@ struct DelegateCounts {
 }
 
 struct ExampleDelegate {
-    counts: Rc<RefCell<DelegateCounts>>,
+    counts: Arc<Mutex<DelegateCounts>>,
 }
 
 impl PdfDocumentDelegate for ExampleDelegate {
     fn page_class_name(&mut self) -> Option<String> {
-        self.counts.borrow_mut().page_class_requests += 1;
+        self.counts.lock().unwrap().page_class_requests += 1;
         Some("PDFPage".to_string())
     }
 }
 
 fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    let counts = Rc::new(RefCell::new(DelegateCounts::default()));
+    let counts = Arc::new(Mutex::new(DelegateCounts::default()));
     let delegate = PdfDocumentDelegateHandle::new(ExampleDelegate {
-        counts: Rc::clone(&counts),
+        counts: Arc::clone(&counts),
     })?;
 
     let document = support::fixture_document()?;
@@ -40,7 +39,7 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 
     println!(
         "page_class_requests={} did_unlock_notification={} view_page_changed_notification={}",
-        counts.borrow().page_class_requests,
+        counts.lock().unwrap().page_class_requests,
         PdfDocumentNotification::DidUnlock.name(),
         PdfViewNotification::PageChanged.name(),
     );

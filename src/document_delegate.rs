@@ -1,9 +1,11 @@
 use std::ffi::{CStr, CString};
 use std::fmt;
 use std::os::raw::{c_char, c_void};
-use std::panic::{catch_unwind, AssertUnwindSafe};
 use std::ptr;
-use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::{Mutex, PoisonError};
+use std::thread::{self, ThreadId};
+
+use doom_fish_utils::callback_context::CallbackContext;
 
 use crate::error::Result;
 use crate::ffi;
@@ -12,7 +14,7 @@ use crate::notifications::PdfDocumentNotification;
 use crate::selection::PdfSelection;
 
 /// Mirrors the `PDFDocumentDelegate` callback surface.
-pub trait PdfDocumentDelegate: 'static {
+pub trait PdfDocumentDelegate: Send + 'static {
     /// Mirrors the corresponding `PDFDocumentDelegate` callback.
     fn handle_notification(&mut self, _notification: PdfDocumentNotification) {}
 
@@ -31,109 +33,64 @@ pub trait PdfDocumentDelegate: 'static {
 }
 
 struct DelegateState {
-    delegate: Box<dyn PdfDocumentDelegate>,
-    ref_count: AtomicUsize,
+    delegate: Mutex<Box<dyn PdfDocumentDelegate>>,
+    caller: Mutex<Option<ThreadId>>,
+}
+
+type DelegateContext = CallbackContext<DelegateState>;
+
+struct CallerReset<'a>(&'a Mutex<Option<ThreadId>>);
+
+impl Drop for CallerReset<'_> {
+    fn drop(&mut self) {
+        *self.0.lock().unwrap_or_else(PoisonError::into_inner) = None;
+    }
 }
 
 impl DelegateState {
-    fn into_raw(delegate: Box<dyn PdfDocumentDelegate>) -> *mut Self {
-        Box::into_raw(Box::new(Self {
-            delegate,
-            ref_count: AtomicUsize::new(1),
-        }))
-    }
-
-    /// Increment the reference count.
-    ///
-    /// # Safety
-    ///
-    /// `ptr` must point to a valid, live `DelegateState`.
-    unsafe fn retain(ptr: *mut Self) {
-        unsafe { &*ptr }.ref_count.fetch_add(1, Ordering::Relaxed);
-    }
-
-    /// Decrement the reference count, freeing the state if it reaches zero.
-    ///
-    /// # Safety
-    ///
-    /// `ptr` must point to a valid, live `DelegateState`. After this call,
-    /// `ptr` must not be used if the state was freed.
-    unsafe fn release(ptr: *mut Self) {
-        if ptr.is_null() {
-            return;
+    fn with_delegate<R>(&self, f: impl FnOnce(&mut dyn PdfDocumentDelegate) -> R) -> Option<R> {
+        let current = thread::current().id();
+        if *self.caller.lock().unwrap_or_else(PoisonError::into_inner) == Some(current) {
+            return None;
         }
-        let prev = unsafe { &*ptr }.ref_count.fetch_sub(1, Ordering::Release);
-        if prev == 1 {
-            // The Acquire fence pairs with the Release stores from other
-            // threads' `fetch_sub` calls, guaranteeing the freeing thread sees
-            // all happened-before writes from every other holder. This is the
-            // canonical Arc-style refcount drop pattern; removing the fence is
-            // unsound on weakly-ordered architectures (e.g. AArch64).
-            std::sync::atomic::fence(Ordering::Acquire);
-            drop(unsafe { Box::from_raw(ptr) });
-        }
+        let mut delegate = self.delegate.lock().unwrap_or_else(PoisonError::into_inner);
+        *self.caller.lock().unwrap_or_else(PoisonError::into_inner) = Some(current);
+        let _reset = CallerReset(&self.caller);
+        Some(f(delegate.as_mut()))
     }
-}
-
-// C trampoline handed to Swift so the bridge delegate object can take a +1
-// reference on the Rust `DelegateState` for the duration of its own lifetime.
-// This keeps the state alive while any callback can still be dispatched on a
-// background queue (e.g. an async document find).
-extern "C" fn context_retain_cb(context: *mut c_void) {
-    if !context.is_null() {
-        unsafe { DelegateState::retain(context.cast::<DelegateState>()) };
-    }
-}
-
-// C trampoline handed to Swift, invoked from the bridge delegate's `deinit` to
-// drop the +1 reference taken in `context_retain_cb`. `DelegateState::release`
-// null-checks internally.
-extern "C" fn context_release_cb(context: *mut c_void) {
-    unsafe { DelegateState::release(context.cast::<DelegateState>()) };
 }
 
 /// Wraps `PDFDocumentDelegateHandle`.
 pub struct PdfDocumentDelegateHandle {
     handle: ObjectHandle,
-    context: *mut DelegateState,
+    context: DelegateContext,
 }
 
 impl PdfDocumentDelegateHandle {
     /// Registers a Rust implementation of `PDFDocumentDelegate`.
     pub fn new(delegate: impl PdfDocumentDelegate) -> Result<Self> {
-        let context_ptr = DelegateState::into_raw(Box::new(delegate));
-        let context = context_ptr.cast::<c_void>();
+        let context = DelegateContext::new(DelegateState {
+            delegate: Mutex::new(Box::new(delegate)),
+            caller: Mutex::new(None),
+        });
         let mut out_delegate = ptr::null_mut();
         let mut out_error = ptr::null_mut();
         let status = unsafe {
             ffi::pdf_document_delegate_new(
-                context,
+                context.as_ptr(),
                 Some(pdf_document_delegate_notification_trampoline),
                 Some(pdf_document_delegate_match_trampoline),
                 Some(pdf_document_delegate_page_class_name_trampoline),
                 Some(pdf_document_delegate_annotation_class_name_trampoline),
-                context_retain_cb,
-                context_release_cb,
+                DelegateContext::RETAIN,
+                DelegateContext::RELEASE,
                 &mut out_delegate,
                 &mut out_error,
             )
         };
-        if let Err(err) = crate::util::status_result(status, out_error) {
-            // Swift never took ownership; drop the initial reference.
-            unsafe { DelegateState::release(context_ptr) };
-            return Err(err);
-        }
-        let handle = match crate::util::required_handle(out_delegate, "PDFDocumentDelegate") {
-            Ok(handle) => handle,
-            Err(err) => {
-                unsafe { DelegateState::release(context_ptr) };
-                return Err(err);
-            }
-        };
-        Ok(Self {
-            handle,
-            context: context_ptr,
-        })
+        crate::util::status_result(status, out_error)?;
+        let handle = crate::util::required_handle(out_delegate, "PDFDocumentDelegate")?;
+        Ok(Self { handle, context })
     }
 
     pub(crate) fn as_handle_ptr(&self) -> *mut c_void {
@@ -143,10 +100,7 @@ impl PdfDocumentDelegateHandle {
 
 impl Drop for PdfDocumentDelegateHandle {
     fn drop(&mut self) {
-        // Drop the initial reference taken in `new`. The Swift delegate object
-        // holds its own +1 (taken via `context_retain_cb`) which is released in
-        // its `deinit`, so an in-flight callback can never observe freed state.
-        unsafe { DelegateState::release(self.context) };
+        self.context.deactivate();
     }
 }
 
@@ -166,95 +120,221 @@ fn duplicate_string(value: Option<String>) -> *mut c_char {
 }
 
 /// # Safety
-/// The caller must ensure that `context` is either null or a valid pointer to `DelegateState`
-/// that was obtained from `Box::into_raw()` and has not yet been freed.
-unsafe fn delegate_state(context: *mut c_void) -> Option<&'static mut DelegateState> {
-    context.cast::<DelegateState>().as_mut()
-}
-
-/// # Safety
-/// This is an extern "C" callback invoked by Swift. The caller must pass a valid, non-null
-/// `context` pointer that points to `DelegateState`. Panics are caught to prevent unwinding
-/// across the FFI boundary.
+/// This is an extern "C" callback invoked by Swift. `context` must be null or the delegate's
+/// `CallbackContext` pointer, kept alive by the Swift delegate object. Panics are caught to
+/// prevent unwinding across the FFI boundary.
 unsafe extern "C" fn pdf_document_delegate_notification_trampoline(
     context: *mut c_void,
     raw_notification: i32,
 ) {
-    let _ = catch_unwind(AssertUnwindSafe(|| {
-        // SAFETY: caller is responsible for providing valid context pointer
-        let Some(state) = (unsafe { delegate_state(context) }) else {
-            return;
-        };
-        let Some(notification) = PdfDocumentNotification::from_raw(raw_notification) else {
-            return;
-        };
-        state.delegate.handle_notification(notification);
-    }));
+    let _ = DelegateContext::with(context, "pdf_document_delegate_notification", |state| {
+        let notification = PdfDocumentNotification::from_raw(raw_notification)?;
+        state.with_delegate(|delegate| delegate.handle_notification(notification))
+    });
 }
 
 /// # Safety
-/// This is an extern "C" callback invoked by Swift. The caller must pass a valid, non-null
-/// `context` pointer that points to `DelegateState`, and `selection_handle` must be a
-/// retained PDFSelection pointer from Swift (or null). Panics are caught to prevent unwinding
-/// across the FFI boundary.
+/// This is an extern "C" callback invoked by Swift. `context` must be null or the delegate's
+/// `CallbackContext` pointer, and `selection_handle` must be a retained PDFSelection pointer
+/// from Swift (or null); it is released even when the delegate is gone. Panics are caught to
+/// prevent unwinding across the FFI boundary.
 unsafe extern "C" fn pdf_document_delegate_match_trampoline(
     context: *mut c_void,
     selection_handle: *mut c_void,
 ) {
-    let _ = catch_unwind(AssertUnwindSafe(|| {
-        // SAFETY: caller is responsible for providing valid context and selection_handle pointers
-        let Some(state) = (unsafe { delegate_state(context) }) else {
-            return;
-        };
-        let Some(handle) = (unsafe { ObjectHandle::from_retained_ptr(selection_handle) }) else {
-            return;
-        };
-        state
-            .delegate
-            .did_match_string(PdfSelection::from_handle(handle));
-    }));
+    let Some(handle) = (unsafe { ObjectHandle::from_retained_ptr(selection_handle) }) else {
+        return;
+    };
+    let selection = PdfSelection::from_handle(handle);
+    let _ = DelegateContext::with(context, "pdf_document_delegate_match", move |state| {
+        state.with_delegate(move |delegate| delegate.did_match_string(selection))
+    });
 }
 
 /// # Safety
-/// This is an extern "C" callback invoked by Swift. The caller must pass a valid, non-null
-/// `context` pointer that points to `DelegateState`. The returned pointer must be freed by
-/// the Swift caller. Panics are caught to prevent unwinding across the FFI boundary.
+/// This is an extern "C" callback invoked by Swift. `context` must be null or the delegate's
+/// `CallbackContext` pointer. The returned pointer must be freed by the Swift caller. Panics
+/// are caught to prevent unwinding across the FFI boundary.
 unsafe extern "C" fn pdf_document_delegate_page_class_name_trampoline(
     context: *mut c_void,
 ) -> *mut c_char {
-    catch_unwind(AssertUnwindSafe(|| {
-        // SAFETY: caller is responsible for providing valid context pointer
-        let Some(state) = (unsafe { delegate_state(context) }) else {
-            return ptr::null_mut();
-        };
-        duplicate_string(state.delegate.page_class_name())
-    }))
+    DelegateContext::with(context, "pdf_document_delegate_page_class_name", |state| {
+        state.with_delegate(|delegate| duplicate_string(delegate.page_class_name()))
+    })
+    .flatten()
     .unwrap_or(ptr::null_mut())
 }
 
 /// # Safety
-/// This is an extern "C" callback invoked by Swift. The caller must pass a valid, non-null
-/// `context` pointer that points to `DelegateState`, and `annotation_type` must be either
-/// null or a valid C string pointer. The returned pointer must be freed by the Swift caller.
-/// Panics are caught to prevent unwinding across the FFI boundary.
+/// This is an extern "C" callback invoked by Swift. `context` must be null or the delegate's
+/// `CallbackContext` pointer, and `annotation_type` must be either null or a valid C string
+/// pointer. The returned pointer must be freed by the Swift caller. Panics are caught to
+/// prevent unwinding across the FFI boundary.
 unsafe extern "C" fn pdf_document_delegate_annotation_class_name_trampoline(
     context: *mut c_void,
     annotation_type: *const c_char,
 ) -> *mut c_char {
-    catch_unwind(AssertUnwindSafe(|| {
-        // SAFETY: caller is responsible for providing valid context and annotation_type pointers
-        let Some(state) = (unsafe { delegate_state(context) }) else {
-            return ptr::null_mut();
-        };
-        let Some(annotation_type) = (!annotation_type.is_null()).then(|| unsafe {
-            // SAFETY: checked for null above; Swift guarantees valid C string
-            CStr::from_ptr(annotation_type)
-                .to_string_lossy()
-                .into_owned()
-        }) else {
-            return ptr::null_mut();
-        };
-        duplicate_string(state.delegate.annotation_class_name(&annotation_type))
-    }))
+    if annotation_type.is_null() {
+        return ptr::null_mut();
+    }
+    DelegateContext::with(context, "pdf_document_delegate_annotation_class_name", |state| {
+        let annotation_type = unsafe { CStr::from_ptr(annotation_type) }
+            .to_string_lossy()
+            .into_owned();
+        state.with_delegate(|delegate| {
+            duplicate_string(delegate.annotation_class_name(&annotation_type))
+        })
+    })
+    .flatten()
     .unwrap_or(ptr::null_mut())
+}
+
+#[cfg(test)]
+mod tests {
+    use std::os::raw::c_void;
+    use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+    use std::sync::{Arc, Barrier, Mutex};
+    use std::thread;
+    use std::time::Duration;
+
+    use super::{
+        pdf_document_delegate_notification_trampoline,
+        pdf_document_delegate_page_class_name_trampoline, DelegateContext, DelegateState,
+        PdfDocumentDelegate,
+    };
+    use crate::notifications::PdfDocumentNotification;
+
+    fn context(delegate: impl PdfDocumentDelegate) -> DelegateContext {
+        DelegateContext::new(DelegateState {
+            delegate: Mutex::new(Box::new(delegate)),
+            caller: Mutex::new(None),
+        })
+    }
+
+    struct Reentrant {
+        context: Arc<AtomicUsize>,
+        notifications: Arc<Mutex<Vec<PdfDocumentNotification>>>,
+    }
+
+    impl PdfDocumentDelegate for Reentrant {
+        fn handle_notification(&mut self, notification: PdfDocumentNotification) {
+            self.notifications.lock().unwrap().push(notification);
+            let context = self.context.load(Ordering::SeqCst) as *mut c_void;
+            unsafe { pdf_document_delegate_notification_trampoline(context, 1) };
+            self.notifications.lock().unwrap().push(notification);
+        }
+
+        fn page_class_name(&mut self) -> Option<String> {
+            Some("PDFPage".to_owned())
+        }
+    }
+
+    #[test]
+    fn reentrant_callback_is_skipped_instead_of_aliasing_the_delegate() {
+        let pointer = Arc::new(AtomicUsize::new(0));
+        let notifications = Arc::new(Mutex::new(Vec::new()));
+        let context = context(Reentrant {
+            context: Arc::clone(&pointer),
+            notifications: Arc::clone(&notifications),
+        });
+        pointer.store(context.as_ptr() as usize, Ordering::SeqCst);
+
+        unsafe { pdf_document_delegate_notification_trampoline(context.as_ptr(), 0) };
+
+        assert_eq!(
+            *notifications.lock().unwrap(),
+            [PdfDocumentNotification::DidUnlock, PdfDocumentNotification::DidUnlock]
+        );
+
+        let class_name =
+            unsafe { pdf_document_delegate_page_class_name_trampoline(context.as_ptr()) };
+        assert!(!class_name.is_null());
+        unsafe { libc::free(class_name.cast()) };
+    }
+
+    struct Overlap {
+        in_call: Arc<AtomicBool>,
+        overlaps: Arc<AtomicUsize>,
+        calls: Arc<AtomicUsize>,
+    }
+
+    impl PdfDocumentDelegate for Overlap {
+        fn handle_notification(&mut self, _notification: PdfDocumentNotification) {
+            if self.in_call.swap(true, Ordering::SeqCst) {
+                self.overlaps.fetch_add(1, Ordering::SeqCst);
+            }
+            thread::sleep(Duration::from_millis(1));
+            self.in_call.store(false, Ordering::SeqCst);
+            self.calls.fetch_add(1, Ordering::SeqCst);
+        }
+    }
+
+    #[test]
+    fn concurrent_callbacks_are_serialized() {
+        const THREADS: usize = 4;
+        const CALLS: usize = 25;
+        let overlaps = Arc::new(AtomicUsize::new(0));
+        let calls = Arc::new(AtomicUsize::new(0));
+        let context = context(Overlap {
+            in_call: Arc::new(AtomicBool::new(false)),
+            overlaps: Arc::clone(&overlaps),
+            calls: Arc::clone(&calls),
+        });
+        let barrier = Barrier::new(THREADS);
+
+        thread::scope(|scope| {
+            for _ in 0..THREADS {
+                scope.spawn(|| {
+                    let pointer = context.retained_ptr();
+                    barrier.wait();
+                    for _ in 0..CALLS {
+                        unsafe { pdf_document_delegate_notification_trampoline(pointer, 2) };
+                    }
+                    unsafe { (DelegateContext::RELEASE)(pointer) };
+                });
+            }
+        });
+
+        assert_eq!(calls.load(Ordering::SeqCst), THREADS * CALLS);
+        assert_eq!(overlaps.load(Ordering::SeqCst), 0);
+    }
+
+    struct Counting(Arc<AtomicUsize>);
+
+    impl PdfDocumentDelegate for Counting {
+        fn handle_notification(&mut self, _notification: PdfDocumentNotification) {
+            self.0.fetch_add(1, Ordering::SeqCst);
+        }
+    }
+
+    #[test]
+    fn callbacks_after_the_handle_is_dropped_do_not_reach_the_delegate() {
+        let calls = Arc::new(AtomicUsize::new(0));
+        let context = context(Counting(Arc::clone(&calls)));
+        let swift_reference = context.retained_ptr();
+
+        unsafe { pdf_document_delegate_notification_trampoline(swift_reference, 5) };
+        context.deactivate();
+        unsafe { pdf_document_delegate_notification_trampoline(swift_reference, 5) };
+        drop(context);
+        unsafe { pdf_document_delegate_notification_trampoline(swift_reference, 5) };
+
+        assert_eq!(calls.load(Ordering::SeqCst), 1);
+        assert_eq!(Arc::strong_count(&calls), 2);
+        unsafe { (DelegateContext::RELEASE)(swift_reference) };
+        assert_eq!(Arc::strong_count(&calls), 1);
+    }
+
+    #[test]
+    fn unknown_notifications_and_null_contexts_are_ignored() {
+        let calls = Arc::new(AtomicUsize::new(0));
+        let context = context(Counting(Arc::clone(&calls)));
+
+        unsafe {
+            pdf_document_delegate_notification_trampoline(context.as_ptr(), 99);
+            pdf_document_delegate_notification_trampoline(std::ptr::null_mut(), 0);
+        }
+
+        assert_eq!(calls.load(Ordering::SeqCst), 0);
+    }
 }
