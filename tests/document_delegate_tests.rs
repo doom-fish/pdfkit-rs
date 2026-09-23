@@ -55,8 +55,11 @@ fn document_delegate_can_override_page_and_annotation_classes() -> Result<()> {
         Some("Link")
     );
 
-    let counts = counts.lock().unwrap();
-    assert!(counts.page_class_requests > 0);
-    assert!(counts.annotation_class_requests > 0);
+    let (page_class_requests, annotation_class_requests) = {
+        let counts = counts.lock().unwrap();
+        (counts.page_class_requests, counts.annotation_class_requests)
+    };
+    assert!(page_class_requests > 0);
+    assert!(annotation_class_requests > 0);
     Ok(())
 }
