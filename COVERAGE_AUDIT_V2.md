@@ -6,6 +6,8 @@ GAPS: 0
 EXEMPT: 49
 COVERAGE_PCT: 100.00
 
+> **Scope of these numbers.** Counts are symbol-level against MacOSX26.2.sdk and were not regenerated against the SDK now installed (26.5). A symbol counts as VERIFIED when a safe wrapper exists; that does not verify each method.
+
 Methodology (v2):
 - Re-parsed PDFKit framework headers in MacOSX26.2.sdk using identical enumeration rules as v1: enumerated all `@interface`, `@protocol`, `typedef NS_ENUM/NS_OPTIONS`, and `PDFKIT_EXTERN` constants.
 - Strictly re-verified each of the 49 v1 EXEMPT entries against actual SDK availability attributes (`PDFKIT_DEPRECATED`, `PDFKIT_CLASS_DEPRECATED`, `PDFKIT_ENUM_DEPRECATED`) in the headers. All exemptions are justified: 36 deprecated `PDFKIT_EXTERN` constants and 13 deprecated `@interface` classes, all marked with deprecation attributes (10.12→10.13 for annotation key constants; 10.4/10.5→10.12 for annotation widget classes).

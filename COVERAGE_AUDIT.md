@@ -6,6 +6,8 @@ GAPS: 0
 EXEMPT: 49
 COVERAGE_PCT: 100.00
 
+> **Scope of these numbers.** Counts are symbol-level against MacOSX26.2.sdk and were not regenerated against the SDK now installed (26.5). A symbol counts as VERIFIED when a safe wrapper exists; that does not verify each method.
+
 Methodology:
 - Parsed top-level Objective-C declarations from `/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk/System/Library/Frameworks/PDFKit.framework/Headers`: `@interface`, `@protocol`, `typedef NS_ENUM/NS_OPTIONS`, and exported constants.
 - Counted deprecated macOS declarations as **EXEMPT** per the audit instructions.

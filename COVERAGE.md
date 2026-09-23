@@ -1,8 +1,8 @@
-# PDFKit v0.2.2 coverage audit
+# PDFKit coverage audit (pdfkit-rs v0.4.0)
 
-Audit source: `PDFKit.framework/Headers/` from the active macOS SDK (`xcrun --sdk macosx --show-sdk-path`).
+Audit source: `PDFKit.framework/Headers/` from the macOS SDK active when the audit was written (v0.2.2); it has not been regenerated since.
 
-This crate's v0.2.2 target closes every non-deprecated top-level Objective-C declaration currently counted by the symbol audit. Remaining non-implemented rows below are either forward declarations with no public interface, deprecated headers treated as exempt, or SDK metadata/umbrella headers.
+The crate covers every non-deprecated top-level Objective-C declaration counted by the symbol audit. Remaining non-implemented rows below are either forward declarations with no public interface, deprecated headers treated as exempt, or SDK metadata/umbrella headers. ✅ means the header's surface is wrapped; it does not mean every method is exercised by tests. In 0.4.0 the document delegate became `Send` with serialized, non-reentrant delivery, `PdfDocumentFindStream` searches a copy of the document, and the character-index APIs are documented in UTF-16 code units.
 
 | Header / surface | Status | Notes |
 | --- | --- | --- |

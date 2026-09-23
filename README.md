@@ -2,7 +2,20 @@
 
 Safe Rust bindings for Apple's [PDFKit](https://developer.apple.com/documentation/pdfkit) framework on macOS. The published Cargo package is `pdfkit-rs`; the Rust library target is `pdfkit`.
 
-> **Status:** v0.3 adds an optional executor-agnostic `async_api` module for document string finding while preserving full coverage of the non-deprecated top-level PDFKit SDK declarations counted by `COVERAGE_AUDIT.md`.
+> **Status:** 0.4.0 is a soundness release. Document delegates must be `Send` and are never aliased across callbacks, the async find stream searches its own copy of the document, passwords are redacted and wiped on the Rust side, and out-of-range indexes no longer abort the process. See the [CHANGELOG](CHANGELOG.md) for the breaking changes.
+
+## Requirements
+
+- macOS 11 or later. Some APIs need macOS 12, 13, 13.4 or 15; on older systems the bridge skips those write options or returns `None` or an error.
+- Xcode or the Swift toolchain: `build.rs` builds the Swift bridge with `swift build`.
+
+## Threading and callbacks
+
+- PDFKit can call a `PdfDocumentDelegate` from a background queue, so delegates must be `Send`. Callbacks from different threads are serialized. A callback that PDFKit makes while the same thread is already inside the delegate (for example `unlock()` called from a delegate method) is not delivered, and class-name queries fall back to the default class.
+- After a `PdfDocumentDelegateHandle` is dropped, callbacks that PDFKit has not started yet no longer reach the delegate.
+- `PdfView`, `PdfThumbnailView` and the page overlay types wrap AppKit views; use them on the main thread.
+- Character indexes and ranges (`number_of_characters`, `selection_for_range`, `selection_from_page_characters`, `character_index_at_point`) count UTF-16 code units, not bytes or `char`s of `PdfPage::string`.
+- `PdfDocumentWriteOptions` prints `<redacted>` for passwords and wipes the Rust-side copies it hands to PDFKit. The copies that Swift and PDFKit make cannot be wiped from Rust.
 
 ## Highlights
 
@@ -77,7 +90,7 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 
 ## Async document find
 
-Enable the `async` Cargo feature to use `pdfkit::async_api::PdfDocumentFindStream`, which runs `PDFDocument.findString(_:withOptions:)` on a worker thread and exposes owned match snapshots through an executor-agnostic bounded async stream.
+Enable the `async` Cargo feature to use `pdfkit::async_api::PdfDocumentFindStream`. It copies the document when the search starts, runs `PDFDocument.findString(_:withOptions:)` on that copy on a background dispatch queue, and exposes owned match snapshots through an executor-agnostic bounded async stream. The stream keeps at most `capacity` events and overwrites the oldest when a consumer falls behind. Dropping it does not wait for the search.
 
 ```toml
 pdfkit-rs = { version = "0.3", features = ["async"] }
@@ -118,7 +131,7 @@ for ex in examples/*.rs; do cargo run --example "$(basename "$ex" .rs)"; done
 
 ## Coverage audit
 
-See [`COVERAGE.md`](COVERAGE.md) for the v0.3.0 header audit and [`COVERAGE_AUDIT.md`](COVERAGE_AUDIT.md) for the symbol-level 100% audit report.
+See [`COVERAGE.md`](COVERAGE.md) for the header audit and [`COVERAGE_AUDIT.md`](COVERAGE_AUDIT.md) for the symbol-level report. Its 100% figure counts top-level declarations of MacOSX26.2.sdk that have a wrapper; it does not verify every method.
 
 ## License
 
