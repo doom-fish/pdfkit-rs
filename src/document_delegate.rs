@@ -177,14 +177,18 @@ unsafe extern "C" fn pdf_document_delegate_annotation_class_name_trampoline(
     if annotation_type.is_null() {
         return ptr::null_mut();
     }
-    DelegateContext::with(context, "pdf_document_delegate_annotation_class_name", |state| {
-        let annotation_type = unsafe { CStr::from_ptr(annotation_type) }
-            .to_string_lossy()
-            .into_owned();
-        state.with_delegate(|delegate| {
-            duplicate_string(delegate.annotation_class_name(&annotation_type))
-        })
-    })
+    DelegateContext::with(
+        context,
+        "pdf_document_delegate_annotation_class_name",
+        |state| {
+            let annotation_type = unsafe { CStr::from_ptr(annotation_type) }
+                .to_string_lossy()
+                .into_owned();
+            state.with_delegate(|delegate| {
+                duplicate_string(delegate.annotation_class_name(&annotation_type))
+            })
+        },
+    )
     .flatten()
     .unwrap_or(ptr::null_mut())
 }
@@ -243,7 +247,10 @@ mod tests {
 
         assert_eq!(
             *notifications.lock().unwrap(),
-            [PdfDocumentNotification::DidUnlock, PdfDocumentNotification::DidUnlock]
+            [
+                PdfDocumentNotification::DidUnlock,
+                PdfDocumentNotification::DidUnlock
+            ]
         );
 
         let class_name =

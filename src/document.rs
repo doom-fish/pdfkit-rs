@@ -272,8 +272,14 @@ impl PdfDocument {
         options: &PdfDocumentWriteOptions,
     ) -> Result<()> {
         let path = path_to_c_string(path.as_ref())?;
-        let secret_len = options.owner_password.as_ref().map_or(0, |value| value.len())
-            + options.user_password.as_ref().map_or(0, |value| value.len());
+        let secret_len = options
+            .owner_password
+            .as_ref()
+            .map_or(0, |value| value.len())
+            + options
+                .user_password
+                .as_ref()
+                .map_or(0, |value| value.len());
         let mut options_json = Zeroizing::new(Vec::new());
         secret_len
             .checked_mul(6)

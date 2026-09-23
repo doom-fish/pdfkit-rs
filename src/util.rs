@@ -25,9 +25,9 @@ pub(crate) fn secret_c_string(value: &str) -> Result<Zeroizing<Vec<u8>>> {
         ));
     }
     let mut bytes = Zeroizing::new(Vec::new());
-    bytes.try_reserve_exact(value.len() + 1).map_err(|_| {
-        PdfKitError::new(ffi::status::INVALID_ARGUMENT, "string is too long")
-    })?;
+    bytes
+        .try_reserve_exact(value.len() + 1)
+        .map_err(|_| PdfKitError::new(ffi::status::INVALID_ARGUMENT, "string is too long"))?;
     bytes.extend_from_slice(value.as_bytes());
     bytes.push(0);
     Ok(bytes)

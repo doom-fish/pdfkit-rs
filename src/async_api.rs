@@ -266,15 +266,18 @@ mod tests {
     #[test]
     fn results_are_delivered_once_and_close_the_stream() {
         let (stream, sink) = new_sink();
-        let json = CString::new(r#"[{"text":"Hello","pages":[{"page_index":0,"ranges":[]}]}]"#)
-            .unwrap();
+        let json =
+            CString::new(r#"[{"text":"Hello","pages":[{"page_index":0,"ranges":[]}]}]"#).unwrap();
 
         unsafe {
             find_result_trampoline(json.as_ptr(), std::ptr::null(), sink.as_ptr());
             find_result_trampoline(json.as_ptr(), std::ptr::null(), sink.as_ptr());
         }
 
-        assert!(matches!(stream.try_next(), Some(PdfDocumentFindEvent::Match(_))));
+        assert!(matches!(
+            stream.try_next(),
+            Some(PdfDocumentFindEvent::Match(_))
+        ));
         assert_eq!(
             stream.try_next(),
             Some(PdfDocumentFindEvent::Notification(
@@ -298,7 +301,10 @@ mod tests {
         let (stream, sink) = new_sink();
         let malformed = CString::new("{").unwrap();
         unsafe { find_result_trampoline(malformed.as_ptr(), std::ptr::null(), sink.as_ptr()) };
-        assert!(matches!(stream.try_next(), Some(PdfDocumentFindEvent::Failed(_))));
+        assert!(matches!(
+            stream.try_next(),
+            Some(PdfDocumentFindEvent::Failed(_))
+        ));
     }
 
     #[test]
