@@ -2,13 +2,15 @@
 //!
 //! Enabled with the `async` Cargo feature.
 //!
-//! [`PdfDocumentFindStream`] runs `PDFDocument.findString(_:withOptions:)` on a
-//! worker thread, converts every match into an owned Rust snapshot, and emits a
-//! bounded async stream backed by [`doom_fish_utils::stream::BoundedAsyncStream`].
+//! [`PdfDocumentFindStream`] copies the document when the search starts and runs
+//! `PDFDocument.findString(_:withOptions:)` on that copy on a background dispatch
+//! queue, so the caller's document is never used from another thread. Every match
+//! is converted into an owned Rust snapshot and emitted through a bounded async
+//! stream backed by [`doom_fish_utils::stream::BoundedAsyncStream`].
 //!
 //! The stream emits synthetic `DidBeginFind` / `DidEndFind` notifications around
-//! the match sequence. Dropping it waits for the worker thread to finish and then
-//! closes the stream.
+//! the match sequence. Dropping it does not wait for the search; results that
+//! arrive afterwards are discarded.
 //!
 //! # Example
 //!
@@ -46,20 +48,22 @@
 
 #![cfg(feature = "async")]
 
-use core::ffi::c_void;
-use core::fmt;
+use core::ffi::{c_char, c_void};
+use std::ffi::CStr;
 use std::ops::BitOr;
 use std::ptr;
-use std::thread::{self, JoinHandle};
+use std::sync::{Mutex, PoisonError};
 
+use doom_fish_utils::callback_context::CallbackContext;
 use doom_fish_utils::stream::{AsyncStreamSender, BoundedAsyncStream, NextItem};
 use serde::Deserialize;
 
 use crate::error::{PdfKitError, Result};
 use crate::ffi;
-use crate::handle::ObjectHandle;
 use crate::util;
 use crate::{PdfDocument, PdfDocumentNotification, PdfTextRange};
+
+type FindSink = CallbackContext<Mutex<Option<AsyncStreamSender<PdfDocumentFindEvent>>>>;
 
 /// `PDFDocument.findString(_:withOptions:)` comparison options.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
@@ -119,26 +123,6 @@ pub enum PdfDocumentFindEvent {
     Failed(PdfKitError),
 }
 
-struct SearchThreadHandle {
-    join: Option<JoinHandle<()>>,
-}
-
-impl Drop for SearchThreadHandle {
-    fn drop(&mut self) {
-        if let Some(join) = self.join.take() {
-            let _ = join.join();
-        }
-    }
-}
-
-impl fmt::Debug for SearchThreadHandle {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("SearchThreadHandle")
-            .field("thread_running", &self.join.is_some())
-            .finish_non_exhaustive()
-    }
-}
-
 fn push_error(sender: &AsyncStreamSender<PdfDocumentFindEvent>, error: PdfKitError) {
     sender.push(PdfDocumentFindEvent::Failed(error));
 }
@@ -146,8 +130,8 @@ fn push_error(sender: &AsyncStreamSender<PdfDocumentFindEvent>, error: PdfKitErr
 /// Async stream of `PDFDocument` find notifications and match snapshots.
 #[derive(Debug)]
 pub struct PdfDocumentFindStream {
+    _sink: FindSink,
     inner: BoundedAsyncStream<PdfDocumentFindEvent>,
-    _handle: SearchThreadHandle,
 }
 
 impl PdfDocumentFindStream {
@@ -166,71 +150,29 @@ impl PdfDocumentFindStream {
         }
 
         let needle = util::c_string(needle)?;
-        let document_ptr = unsafe { ffi::pdf_object_retain(document.as_handle_ptr()) };
-        if document_ptr.is_null() {
-            return Err(PdfKitError::new(
-                ffi::status::NULL_RESULT,
-                "PDFDocument retain returned null",
-            ));
-        }
-
-        let document_addr = document_ptr as usize;
         let (stream, sender) = BoundedAsyncStream::new(capacity);
-        let join = thread::spawn(move || {
-            let Some(handle) =
-                (unsafe { ObjectHandle::from_retained_ptr(document_addr as *mut c_void) })
-            else {
-                push_error(
-                    &sender,
-                    PdfKitError::new(ffi::status::NULL_RESULT, "PDFDocument retain returned null"),
-                );
-                return;
-            };
-            let document = PdfDocument::from_handle(handle);
-
-            sender.push(PdfDocumentFindEvent::Notification(
-                PdfDocumentNotification::DidBeginFind,
-            ));
-
-            let mut out_error = ptr::null_mut();
-            let json_ptr = unsafe {
-                ffi::pdf_document_find_string_json(
-                    document.as_handle_ptr(),
-                    needle.as_ptr(),
-                    options.bits(),
-                    &mut out_error,
-                )
-            };
-
-            let Some(json) = util::take_string(json_ptr) else {
-                let message = util::take_string(out_error)
-                    .unwrap_or_else(|| "PDFDocument.findString returned null".to_string());
-                push_error(&sender, PdfKitError::new(ffi::status::FRAMEWORK, message));
-                return;
-            };
-
-            match serde_json::from_str::<Vec<PdfDocumentFindMatch>>(&json) {
-                Ok(matches) => {
-                    for found in matches {
-                        sender.push(PdfDocumentFindEvent::Match(found));
-                    }
-                    sender.push(PdfDocumentFindEvent::Notification(
-                        PdfDocumentNotification::DidEndFind,
-                    ));
-                }
-                Err(error) => push_error(
-                    &sender,
-                    PdfKitError::new(
-                        ffi::status::FRAMEWORK,
-                        format!("failed to parse PDFDocument find results: {error}"),
-                    ),
-                ),
-            }
-        });
+        sender.push(PdfDocumentFindEvent::Notification(
+            PdfDocumentNotification::DidBeginFind,
+        ));
+        let sink = FindSink::new(Mutex::new(Some(sender)));
+        let mut out_error = ptr::null_mut();
+        let status = unsafe {
+            ffi::pdf_document_find_string_async(
+                document.as_handle_ptr(),
+                needle.as_ptr(),
+                options.bits(),
+                find_result_trampoline,
+                sink.as_ptr(),
+                FindSink::RETAIN,
+                FindSink::RELEASE,
+                &mut out_error,
+            )
+        };
+        util::status_result(status, out_error)?;
 
         Ok(Self {
+            _sink: sink,
             inner: stream,
-            _handle: SearchThreadHandle { join: Some(join) },
         })
     }
 
@@ -252,9 +194,124 @@ impl PdfDocumentFindStream {
         self.inner.buffered_count()
     }
 
-    /// Return `true` once the worker thread has finished and the stream has closed.
+    /// Return `true` once the search has finished and the stream has closed.
     #[must_use]
     pub fn is_closed(&self) -> bool {
         self.inner.is_closed()
+    }
+}
+
+unsafe extern "C" fn find_result_trampoline(
+    json: *const c_char,
+    error: *const c_char,
+    context: *mut c_void,
+) {
+    let _ = FindSink::with(context, "pdf_document_find_result", |sink| {
+        let Some(sender) = sink.lock().unwrap_or_else(PoisonError::into_inner).take() else {
+            return;
+        };
+        if !error.is_null() {
+            let message = unsafe { CStr::from_ptr(error) }
+                .to_string_lossy()
+                .into_owned();
+            push_error(&sender, PdfKitError::new(ffi::status::FRAMEWORK, message));
+            return;
+        }
+        if json.is_null() {
+            push_error(
+                &sender,
+                PdfKitError::new(
+                    ffi::status::NULL_RESULT,
+                    "PDFDocument.findString returned null",
+                ),
+            );
+            return;
+        }
+        let json = unsafe { CStr::from_ptr(json) }.to_string_lossy();
+        match serde_json::from_str::<Vec<PdfDocumentFindMatch>>(&json) {
+            Ok(matches) => {
+                for found in matches {
+                    sender.push(PdfDocumentFindEvent::Match(found));
+                }
+                sender.push(PdfDocumentFindEvent::Notification(
+                    PdfDocumentNotification::DidEndFind,
+                ));
+            }
+            Err(error) => push_error(
+                &sender,
+                PdfKitError::new(
+                    ffi::status::FRAMEWORK,
+                    format!("failed to parse PDFDocument find results: {error}"),
+                ),
+            ),
+        }
+    });
+}
+
+#[cfg(test)]
+mod tests {
+    use std::ffi::CString;
+    use std::sync::Mutex;
+
+    use doom_fish_utils::stream::BoundedAsyncStream;
+
+    use super::{find_result_trampoline, FindSink, PdfDocumentFindEvent};
+    use crate::PdfDocumentNotification;
+
+    fn new_sink() -> (BoundedAsyncStream<PdfDocumentFindEvent>, FindSink) {
+        let (stream, sender) = BoundedAsyncStream::new(8);
+        (stream, FindSink::new(Mutex::new(Some(sender))))
+    }
+
+    #[test]
+    fn results_are_delivered_once_and_close_the_stream() {
+        let (stream, sink) = new_sink();
+        let json = CString::new(r#"[{"text":"Hello","pages":[{"page_index":0,"ranges":[]}]}]"#)
+            .unwrap();
+
+        unsafe {
+            find_result_trampoline(json.as_ptr(), std::ptr::null(), sink.as_ptr());
+            find_result_trampoline(json.as_ptr(), std::ptr::null(), sink.as_ptr());
+        }
+
+        assert!(matches!(stream.try_next(), Some(PdfDocumentFindEvent::Match(_))));
+        assert_eq!(
+            stream.try_next(),
+            Some(PdfDocumentFindEvent::Notification(
+                PdfDocumentNotification::DidEndFind
+            ))
+        );
+        assert_eq!(stream.try_next(), None);
+        assert!(stream.is_closed());
+    }
+
+    #[test]
+    fn errors_and_malformed_results_become_failed_events() {
+        let (stream, sink) = new_sink();
+        let message = CString::new("search failed").unwrap();
+        unsafe { find_result_trampoline(std::ptr::null(), message.as_ptr(), sink.as_ptr()) };
+        assert!(
+            matches!(stream.try_next(), Some(PdfDocumentFindEvent::Failed(error)) if error.to_string().contains("search failed"))
+        );
+        assert!(stream.is_closed());
+
+        let (stream, sink) = new_sink();
+        let malformed = CString::new("{").unwrap();
+        unsafe { find_result_trampoline(malformed.as_ptr(), std::ptr::null(), sink.as_ptr()) };
+        assert!(matches!(stream.try_next(), Some(PdfDocumentFindEvent::Failed(_))));
+    }
+
+    #[test]
+    fn results_after_the_stream_is_dropped_are_discarded() {
+        let (stream, sink) = new_sink();
+        let swift_reference = sink.retained_ptr();
+        drop(stream);
+        drop(sink);
+
+        let json = CString::new("[]").unwrap();
+        unsafe {
+            find_result_trampoline(json.as_ptr(), std::ptr::null(), swift_reference);
+            (FindSink::RELEASE)(swift_reference);
+        }
     }
 }

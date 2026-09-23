@@ -2,6 +2,9 @@
 
 use core::ffi::{c_char, c_void};
 
+pub type PdfDocumentFindResultCallback =
+    unsafe extern "C" fn(json: *const c_char, error: *const c_char, context: *mut c_void);
+
 unsafe extern "C" {
     pub fn pdf_document_new(
         out_document: *mut *mut c_void,
@@ -98,10 +101,14 @@ unsafe extern "C" {
         index_b: u64,
         out_error_message: *mut *mut c_char,
     ) -> i32;
-    pub fn pdf_document_find_string_json(
+    pub fn pdf_document_find_string_async(
         handle: *mut c_void,
         needle: *const c_char,
         options: u64,
+        callback: PdfDocumentFindResultCallback,
+        context: *mut c_void,
+        context_retain: super::document_delegate::PdfDocumentDelegateContextCallback,
+        context_release: super::document_delegate::PdfDocumentDelegateContextCallback,
         out_error_message: *mut *mut c_char,
-    ) -> *mut c_char;
+    ) -> i32;
 }

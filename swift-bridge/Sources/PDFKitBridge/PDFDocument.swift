@@ -373,6 +373,77 @@ private func pdf_document_find_matches_payload(
     }
 }
 
+public typealias PDFDocumentFindResultCallback = @convention(c) (UnsafePointer<CChar>?, UnsafePointer<CChar>?, UnsafeMutableRawPointer?) -> Void
+
+final class PDFDocumentFindSink {
+    private let callback: PDFDocumentFindResultCallback
+    private let context: UnsafeMutableRawPointer
+    private let contextRelease: PDFDocumentDelegateContextCallback
+
+    init(
+        callback: @escaping PDFDocumentFindResultCallback,
+        context: UnsafeMutableRawPointer,
+        contextRetain: PDFDocumentDelegateContextCallback,
+        contextRelease: @escaping PDFDocumentDelegateContextCallback
+    ) {
+        self.callback = callback
+        self.context = context
+        self.contextRelease = contextRelease
+        contextRetain(context)
+    }
+
+    deinit {
+        contextRelease(context)
+    }
+
+    func deliver(json: String?, error: String?) {
+        if let json {
+            json.withCString { callback($0, nil, context) }
+        } else if let error {
+            error.withCString { callback(nil, $0, context) }
+        } else {
+            callback(nil, nil, context)
+        }
+    }
+}
+
+@_cdecl("pdf_document_find_string_async")
+public func pdf_document_find_string_async(
+    _ handle: UnsafeMutableRawPointer?,
+    _ needle: UnsafePointer<CChar>?,
+    _ options: UInt64,
+    _ callback: @escaping PDFDocumentFindResultCallback,
+    _ context: UnsafeMutableRawPointer?,
+    _ contextRetain: @escaping PDFDocumentDelegateContextCallback,
+    _ contextRelease: @escaping PDFDocumentDelegateContextCallback,
+    _ outError: UnsafeMutablePointer<UnsafeMutablePointer<CChar>?>?
+) -> Int32 {
+    pdf_run(outError) {
+        guard let document = pdf_document_value(handle), let needle, let context else {
+            throw PDFBridgeError.invalidArgument("missing document handle, search string or context")
+        }
+        guard let snapshot = document.copy() as? PDFDocument else {
+            throw PDFBridgeError.framework("failed to copy PDFDocument for searching")
+        }
+        let string = String(cString: needle)
+        let compareOptions = NSString.CompareOptions(rawValue: UInt(options))
+        let sink = PDFDocumentFindSink(
+            callback: callback,
+            context: context,
+            contextRetain: contextRetain,
+            contextRelease: contextRelease
+        )
+        DispatchQueue.global(qos: .userInitiated).async {
+            let matches = snapshot.findString(string, withOptions: compareOptions)
+            if let json = pdf_json_string(from: pdf_document_find_matches_payload(snapshot, matches)) {
+                sink.deliver(json: json, error: nil)
+            } else {
+                sink.deliver(json: nil, error: "failed to encode PDFDocument find results")
+            }
+        }
+    }
+}
+
 @_cdecl("pdf_document_begin_find_string")
 public func pdf_document_begin_find_string(
     _ handle: UnsafeMutableRawPointer?,
@@ -388,34 +459,6 @@ public func pdf_document_begin_find_string(
             String(cString: needle),
             withOptions: NSString.CompareOptions(rawValue: UInt(options))
         )
-    }
-}
-
-@_cdecl("pdf_document_find_string_json")
-public func pdf_document_find_string_json(
-    _ handle: UnsafeMutableRawPointer?,
-    _ needle: UnsafePointer<CChar>?,
-    _ options: UInt64,
-    _ outError: UnsafeMutablePointer<UnsafeMutablePointer<CChar>?>?
-) -> UnsafeMutablePointer<CChar>? {
-    do {
-        guard let document = pdf_document_value(handle), let needle else {
-            throw PDFBridgeError.invalidArgument("missing document handle or search string")
-        }
-        let matches = document.findString(
-            String(cString: needle),
-            withOptions: NSString.CompareOptions(rawValue: UInt(options))
-        )
-        let payload = pdf_document_find_matches_payload(document, matches)
-        guard let json = pdf_json_string(from: payload) else {
-            throw PDFBridgeError.framework("failed to encode PDFDocument find results")
-        }
-        outError?.pointee = nil
-        return pdf_string(json)
-    } catch {
-        let bridgeError = (error as? PDFBridgeError) ?? .framework((error as NSError).localizedDescription)
-        outError?.pointee = pdf_string(bridgeError.description)
-        return nil
     }
 }
 
