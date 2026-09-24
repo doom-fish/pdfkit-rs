@@ -2,6 +2,7 @@
 
 use core::ffi::{c_char, c_void};
 
+#[cfg(feature = "async")]
 pub type PdfDocumentFindResultCallback =
     unsafe extern "C" fn(json: *const c_char, error: *const c_char, context: *mut c_void);
 
@@ -101,6 +102,7 @@ unsafe extern "C" {
         index_b: u64,
         out_error_message: *mut *mut c_char,
     ) -> i32;
+    #[cfg(feature = "async")]
     pub fn pdf_document_find_string_async(
         handle: *mut c_void,
         needle: *const c_char,
