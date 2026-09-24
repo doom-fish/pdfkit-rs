@@ -69,6 +69,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Breaking:** `PdfDocumentFindStream` no longer overwrites its oldest event
   when `capacity` events are buffered; the search waits for the consumer, so
   every match is delivered.
+- **Breaking:** the PDFKit wrappers (`PdfDocument`, `PdfPage`,
+  `PdfAnnotation`, `PdfOutline`, `PdfSelection`, `PdfBorder`,
+  `PdfDestination`, the `PdfAction*` types, `PdfAppearanceCharacteristics`,
+  `PdfView`, `PdfThumbnailView` and `PdfPageOverlayView`) no longer implement
+  `Clone`, which shared one mutable object between the clones.
 - Requires `doom-fish-utils` 0.4.1 and adds a `zeroize` dependency.
   `rust-version` is now 1.82.
 
