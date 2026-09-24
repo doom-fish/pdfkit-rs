@@ -8,7 +8,7 @@ use crate::handle::ObjectHandle;
 use crate::util::take_string;
 
 /// Wraps `PDFActionGoTo`.
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct PdfActionGoTo {
     handle: ObjectHandle,
 }

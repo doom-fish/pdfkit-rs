@@ -7,7 +7,7 @@ use crate::handle::ObjectHandle;
 use crate::util::{c_string, parse_json, take_string};
 
 /// Wraps `PDFActionResetForm`.
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct PdfActionResetForm {
     handle: ObjectHandle,
 }

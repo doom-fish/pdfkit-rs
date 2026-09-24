@@ -10,7 +10,7 @@ use crate::handle::ObjectHandle;
 use crate::util::{option_c_string, take_string};
 
 /// Wraps `PDFOutline`.
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct PdfOutline {
     handle: ObjectHandle,
 }

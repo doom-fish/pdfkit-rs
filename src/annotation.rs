@@ -12,7 +12,7 @@ use crate::types::{PdfAnnotationInfo, PdfRect};
 use crate::util::{c_string, option_c_string, parse_json};
 
 /// Wraps `PDFAnnotation`.
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct PdfAnnotation {
     handle: ObjectHandle,
 }

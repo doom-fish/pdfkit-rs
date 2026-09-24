@@ -18,7 +18,7 @@ use crate::types::{
 use crate::util::{parse_json, path_to_c_string, required_handle, secret_c_string, take_string};
 
 /// Wraps `PDFDocument`.
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct PdfDocument {
     handle: ObjectHandle,
 }

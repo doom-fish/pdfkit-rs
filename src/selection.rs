@@ -9,7 +9,7 @@ use crate::types::{PdfRect, PdfTextRange};
 use crate::util::take_string;
 
 /// Wraps `PDFSelection`.
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct PdfSelection {
     handle: ObjectHandle,
 }

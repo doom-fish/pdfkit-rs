@@ -3,7 +3,6 @@
 use core::ffi::c_void;
 
 unsafe extern "C" {
-    pub fn pdf_object_retain(handle: *mut c_void) -> *mut c_void;
     pub fn pdf_object_release(handle: *mut c_void);
 }
 

@@ -8,7 +8,7 @@ use crate::types::PdfActionNamedName;
 use crate::util::take_string;
 
 /// Wraps `PDFActionNamed`.
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct PdfActionNamed {
     handle: ObjectHandle,
 }

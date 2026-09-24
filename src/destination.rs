@@ -9,7 +9,7 @@ use crate::types::{PdfDestinationInfo, PdfPoint};
 use crate::util::parse_json;
 
 /// Wraps `PDFDestination`.
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct PdfDestination {
     handle: ObjectHandle,
 }

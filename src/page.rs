@@ -9,7 +9,7 @@ use crate::types::{DisplayBox, PdfPageImageInitializationOptions, PdfPoint, PdfR
 use crate::util::{c_string, take_string};
 
 /// Wraps `PDFPage`.
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct PdfPage {
     handle: ObjectHandle,
 }

@@ -7,7 +7,7 @@ use crate::types::{PdfAppearanceCharacteristicsInfo, PdfColor, PdfWidgetControlT
 use crate::util::{option_c_string, parse_json};
 
 /// Wraps `PDFAppearanceCharacteristics`.
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct PdfAppearanceCharacteristics {
     handle: ObjectHandle,
 }

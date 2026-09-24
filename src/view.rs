@@ -16,7 +16,7 @@ use crate::util::parse_json;
 use crate::view_delegate::PdfViewDelegateHandle;
 
 /// Wraps `PDFView`.
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct PdfView {
     handle: ObjectHandle,
 }

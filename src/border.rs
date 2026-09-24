@@ -7,7 +7,7 @@ use crate::types::{PdfBorderInfo, PdfBorderStyle};
 use crate::util::parse_json;
 
 /// Wraps `PDFBorder`.
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct PdfBorder {
     handle: ObjectHandle,
 }

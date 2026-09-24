@@ -9,7 +9,7 @@ use crate::util::parse_json;
 use crate::view::PdfView;
 
 /// Wraps `PDFThumbnailView`.
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct PdfThumbnailView {
     handle: ObjectHandle,
 }

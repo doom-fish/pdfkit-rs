@@ -8,7 +8,7 @@ use crate::types::PdfPoint;
 use crate::util::{c_string, take_string};
 
 /// Wraps `PDFActionRemoteGoTo`.
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct PdfActionRemoteGoTo {
     handle: ObjectHandle,
 }

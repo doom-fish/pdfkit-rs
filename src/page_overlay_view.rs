@@ -7,7 +7,7 @@ use crate::handle::ObjectHandle;
 use crate::types::PdfSize;
 
 /// Wraps `PDFPageOverlayView`.
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct PdfPageOverlayView {
     handle: ObjectHandle,
 }

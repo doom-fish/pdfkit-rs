@@ -19,7 +19,7 @@ pub trait PdfActionLike: sealed::Sealed {
 }
 
 /// Wraps `PDFAction`.
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct PdfAction {
     handle: ObjectHandle,
 }

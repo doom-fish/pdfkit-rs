@@ -21,16 +21,6 @@ impl ObjectHandle {
     }
 }
 
-impl Clone for ObjectHandle {
-    fn clone(&self) -> Self {
-        // SAFETY: as_ptr returns a valid pointer to a PDFKit object; pdf_object_retain
-        // is guaranteed to return a valid retained pointer or null (checked below)
-        let retained = unsafe { ffi::pdf_object_retain(self.as_ptr()) };
-        // SAFETY: retained pointer is valid or null (both handled by from_retained_ptr)
-        unsafe { Self::from_retained_ptr(retained) }.expect("PDFKit retain returned null")
-    }
-}
-
 impl Drop for ObjectHandle {
     fn drop(&mut self) {
         // SAFETY: as_ptr returns a valid pointer to a PDFKit object that was retained
