@@ -26,6 +26,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A `PdfPage` keeps the document it came from alive. PDFKit only references a
   page's document weakly, so a page that outlived every `PdfDocument` handle
   crashed inside PDFKit (for example in `selection_for_word_at_point`).
+- The view delegate and the page overlay provider no longer create aliasing
+  `&'static mut` references on re-entrant callbacks or free their state while
+  a callback is running: both live in a `CallbackContext` that the Swift
+  object retains, confined to the main thread.
 
 ### Fixed
 
@@ -37,6 +41,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   finishes.
 - A match delivered after the delegate handle was dropped releases its
   `PDFSelection` instead of leaking it.
+- View delegate and overlay provider callbacks release the retained views,
+  pages and actions they receive even when the delegate is gone.
 
 ### Changed
 
@@ -53,6 +59,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   document are not searched.
 - The docs of `number_of_characters`, `selection_for_range` and
   `selection_from_page_characters` state that indexes count UTF-16 code units.
+- **Breaking:** `PdfView::new`, `PdfThumbnailView::new`,
+  `PdfPageOverlayView::new`, `PdfViewDelegateHandle::new` and
+  `PdfPageOverlayViewProviderHandle::new` return an error (status -4) when
+  called off the main thread.
+- **Breaking:** a view delegate or overlay provider callback that PDFKit makes
+  while the main thread is already inside that delegate is not delivered;
+  PDFKit gets the default answer instead.
+- **Breaking:** `PdfDocumentFindStream` no longer overwrites its oldest event
+  when `capacity` events are buffered; the search waits for the consumer, so
+  every match is delivered.
 - Requires `doom-fish-utils` 0.4.1 and adds a `zeroize` dependency.
   `rust-version` is now 1.82.
 

@@ -20,7 +20,7 @@ pdfkit-rs = "0.4"
 
 - PDFKit can call a `PdfDocumentDelegate` from a background queue, so delegates must be `Send`. Callbacks from different threads are serialized. A callback that PDFKit makes while the same thread is already inside the delegate (for example `unlock()` called from a delegate method) is not delivered, and class-name queries fall back to the default class.
 - After a `PdfDocumentDelegateHandle` is dropped, callbacks that PDFKit has not started yet no longer reach the delegate.
-- `PdfView`, `PdfThumbnailView` and the page overlay types wrap AppKit views; use them on the main thread.
+- `PdfView`, `PdfThumbnailView`, `PdfPageOverlayView` and the view delegate and overlay provider handles belong to the main thread: their constructors return an error on any other thread, and the wrappers are `!Send`. View delegates and overlay providers run on the main thread and may hold UI handles; a callback that re-enters the same delegate is not delivered and PDFKit gets the default answer.
 - Character indexes and ranges (`number_of_characters`, `selection_for_range`, `selection_from_page_characters`, `character_index_at_point`) count UTF-16 code units, not bytes or `char`s of `PdfPage::string`.
 - `PdfDocumentWriteOptions` prints `<redacted>` for passwords and wipes the Rust-side copies it hands to PDFKit. The copies that Swift and PDFKit make cannot be wiped from Rust.
 
@@ -97,7 +97,7 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 
 ## Async document find
 
-Enable the `async` Cargo feature to use `pdfkit::async_api::PdfDocumentFindStream`. It copies the document when the search starts, runs `PDFDocument.findString(_:withOptions:)` on that copy on a background dispatch queue, and exposes owned match snapshots through an executor-agnostic bounded async stream. The stream keeps at most `capacity` events and overwrites the oldest when a consumer falls behind. Dropping it does not wait for the search.
+Enable the `async` Cargo feature to use `pdfkit::async_api::PdfDocumentFindStream`. It copies the document when the search starts, runs `PDFDocument.findString(_:withOptions:)` on that copy on a background dispatch queue, and exposes owned match snapshots through an executor-agnostic bounded async stream. Every match is delivered: once `capacity` events are buffered, the search waits for the consumer. Dropping the stream does not wait for the search.
 
 ```toml
 pdfkit-rs = { version = "0.4", features = ["async"] }
