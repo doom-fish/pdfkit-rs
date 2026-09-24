@@ -19,6 +19,7 @@ impl PdfPageOverlayView {
 
     /// Wraps the corresponding `PDFPageOverlayView` API.
     pub fn new(size: PdfSize) -> Result<Self> {
+        crate::main_thread::require_main_thread("PDFPageOverlayView")?;
         let mut out_view = ptr::null_mut();
         let mut out_error = ptr::null_mut();
         let status = unsafe {

@@ -28,6 +28,7 @@ impl PdfView {
 
     /// Wraps `PDFView(frame:)`.
     pub fn new(size: PdfSize) -> Result<Self> {
+        crate::main_thread::require_main_thread("PDFView")?;
         let mut out_view = ptr::null_mut();
         let mut out_error = ptr::null_mut();
         let status = unsafe {

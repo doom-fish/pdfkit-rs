@@ -30,6 +30,8 @@ unsafe extern "C" {
         perform_find_callback: PdfViewDelegateBoolCallback,
         perform_go_to_page_callback: PdfViewDelegateBoolCallback,
         remote_goto_callback: PdfViewDelegateRemoteGoToCallback,
+        context_retain: super::document_delegate::PdfDocumentDelegateContextCallback,
+        context_release: super::document_delegate::PdfDocumentDelegateContextCallback,
         out_delegate: *mut *mut c_void,
         out_error_message: *mut *mut c_char,
     ) -> i32;

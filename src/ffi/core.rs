@@ -12,4 +12,5 @@ pub mod status {
     pub const INVALID_ARGUMENT: i32 = -1;
     pub const NULL_RESULT: i32 = -2;
     pub const FRAMEWORK: i32 = -3;
+    pub const WRONG_THREAD: i32 = -4;
 }

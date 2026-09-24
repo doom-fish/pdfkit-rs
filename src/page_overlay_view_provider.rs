@@ -1,11 +1,13 @@
 use std::fmt;
 use std::os::raw::c_void;
-use std::panic::{catch_unwind, AssertUnwindSafe};
 use std::ptr;
+
+use doom_fish_utils::callback_context::CallbackContext;
 
 use crate::error::Result;
 use crate::ffi;
 use crate::handle::ObjectHandle;
+use crate::main_thread::MainThreadCell;
 use crate::page::PdfPage;
 use crate::page_overlay_view::PdfPageOverlayView;
 use crate::view::PdfView;
@@ -40,44 +42,48 @@ pub trait PdfPageOverlayViewProvider: 'static {
     }
 }
 
-struct ProviderState {
-    provider: Box<dyn PdfPageOverlayViewProvider>,
-}
+type ProviderContext = CallbackContext<MainThreadCell<Box<dyn PdfPageOverlayViewProvider>>>;
 
 /// Wraps `PDFPageOverlayViewProviderHandle`.
 pub struct PdfPageOverlayViewProviderHandle {
     handle: ObjectHandle,
-    _state: Box<ProviderState>,
+    context: ProviderContext,
 }
 
 impl PdfPageOverlayViewProviderHandle {
     /// Registers a Rust implementation of `PDFPageOverlayViewProvider`.
     pub fn new(provider: impl PdfPageOverlayViewProvider) -> Result<Self> {
-        let mut state = Box::new(ProviderState {
-            provider: Box::new(provider),
-        });
-        let context = ptr::addr_of_mut!(*state).cast::<c_void>();
+        let context = ProviderContext::new(MainThreadCell::new(
+            Box::new(provider) as Box<dyn PdfPageOverlayViewProvider>,
+            "PdfPageOverlayViewProviderHandle",
+        )?);
         let mut out_provider = ptr::null_mut();
         let mut out_error = ptr::null_mut();
         let status = unsafe {
             ffi::pdf_page_overlay_view_provider_new(
-                context,
+                context.as_ptr(),
                 Some(pdf_page_overlay_view_provider_overlay_trampoline),
                 Some(pdf_page_overlay_view_provider_will_display_trampoline),
                 Some(pdf_page_overlay_view_provider_will_end_displaying_trampoline),
+                ProviderContext::RETAIN,
+                ProviderContext::RELEASE,
                 &raw mut out_provider,
                 &raw mut out_error,
             )
         };
         crate::util::status_result(status, out_error)?;
-        Ok(Self {
-            handle: crate::util::required_handle(out_provider, "PDFPageOverlayViewProvider")?,
-            _state: state,
-        })
+        let handle = crate::util::required_handle(out_provider, "PDFPageOverlayViewProvider")?;
+        Ok(Self { handle, context })
     }
 
     pub(crate) fn as_handle_ptr(&self) -> *mut c_void {
         self.handle.as_ptr()
+    }
+}
+
+impl Drop for PdfPageOverlayViewProviderHandle {
+    fn drop(&mut self) {
+        self.context.deactivate();
     }
 }
 
@@ -88,11 +94,17 @@ impl fmt::Debug for PdfPageOverlayViewProviderHandle {
     }
 }
 
-/// # Safety
-/// The caller must ensure that `context` is either null or a valid pointer to `ProviderState`
-/// that was obtained from `Box::into_raw()` and has not yet been freed.
-unsafe fn provider_state(context: *mut c_void) -> Option<&'static mut ProviderState> {
-    context.cast::<ProviderState>().as_mut()
+unsafe fn with_provider<R>(
+    context: *mut c_void,
+    site: &str,
+    f: impl FnOnce(&mut dyn PdfPageOverlayViewProvider) -> R,
+) -> Option<R> {
+    unsafe {
+        ProviderContext::with(context, site, |cell| {
+            cell.with(|provider| f(provider.as_mut()))
+        })
+    }
+    .flatten()
 }
 
 /// Helper to convert a retained PDFView pointer to a PdfView.
@@ -123,95 +135,80 @@ unsafe fn retained_overlay_view(handle: *mut c_void) -> Option<PdfPageOverlayVie
 }
 
 /// # Safety
-/// This is an extern "C" callback invoked by Swift. The caller must pass a valid, non-null
-/// `context` pointer that points to `ProviderState`, and `view_handle` and `page_handle`
-/// must be retained PDFView and PDFPage pointers from Swift (or null). The returned pointer
-/// should be a retained PDFPageOverlayView or null. Panics are caught to prevent unwinding
-/// across the FFI boundary.
+/// This is an extern "C" callback invoked by Swift. `context` must be null or the provider's
+/// `CallbackContext` pointer, and `view_handle` and `page_handle` must be retained PDFView and
+/// PDFPage pointers from Swift (or null); both are released even when the provider is gone.
+/// The returned pointer is a retained PDFPageOverlayView or null. Panics are caught to prevent
+/// unwinding across the FFI boundary.
 unsafe extern "C" fn pdf_page_overlay_view_provider_overlay_trampoline(
     context: *mut c_void,
     view_handle: *mut c_void,
     page_handle: *mut c_void,
 ) -> *mut c_void {
-    catch_unwind(AssertUnwindSafe(|| {
-        // SAFETY: caller is responsible for providing valid context, view_handle, and page_handle pointers
-        let Some(state) = (unsafe { provider_state(context) }) else {
-            return ptr::null_mut();
-        };
-        let Some(view) = (unsafe { retained_view(view_handle) }) else {
-            return ptr::null_mut();
-        };
-        let Some(page) = (unsafe { retained_page(page_handle) }) else {
-            return ptr::null_mut();
-        };
-        state
-            .provider
-            .overlay_view_for_page(view, page)
-            .map_or(ptr::null_mut(), PdfPageOverlayView::into_handle_ptr)
-    }))
-    .unwrap_or(ptr::null_mut())
+    let view = unsafe { retained_view(view_handle) };
+    let page = unsafe { retained_page(page_handle) };
+    let (Some(view), Some(page)) = (view, page) else {
+        return ptr::null_mut();
+    };
+    unsafe {
+        with_provider(context, "pdf_page_overlay_view_provider_overlay", |provider| {
+            provider.overlay_view_for_page(view, page)
+        })
+    }
+    .flatten()
+    .map_or(ptr::null_mut(), PdfPageOverlayView::into_handle_ptr)
 }
 
 /// # Safety
-/// This is an extern "C" callback invoked by Swift. The caller must pass valid, non-null
-/// `context`, `view_handle`, `overlay_view_handle`, and `page_handle` pointers. They must
-/// all point to valid PDFPageOverlayViewProvider/PDFView/PDFPageOverlayView/PDFPage objects
-/// respectively, or be null (except context). Panics are caught to prevent unwinding across
-/// the FFI boundary.
+/// This is an extern "C" callback invoked by Swift. `context` must be null or the provider's
+/// `CallbackContext` pointer, and `view_handle`, `overlay_view_handle` and `page_handle` must
+/// be retained PDFView, PDFPageOverlayView and PDFPage pointers from Swift (or null); they are
+/// released even when the provider is gone. Panics are caught to prevent unwinding across the
+/// FFI boundary.
 unsafe extern "C" fn pdf_page_overlay_view_provider_will_display_trampoline(
     context: *mut c_void,
     view_handle: *mut c_void,
     overlay_view_handle: *mut c_void,
     page_handle: *mut c_void,
 ) {
-    let _ = catch_unwind(AssertUnwindSafe(|| {
-        // SAFETY: caller is responsible for providing valid context, view_handle, overlay_view_handle, and page_handle pointers
-        let Some(state) = (unsafe { provider_state(context) }) else {
-            return;
-        };
-        let Some(view) = (unsafe { retained_view(view_handle) }) else {
-            return;
-        };
-        let Some(overlay_view) = (unsafe { retained_overlay_view(overlay_view_handle) }) else {
-            return;
-        };
-        let Some(page) = (unsafe { retained_page(page_handle) }) else {
-            return;
-        };
-        state
-            .provider
-            .will_display_overlay_view(view, overlay_view, page);
-    }));
+    let view = unsafe { retained_view(view_handle) };
+    let overlay_view = unsafe { retained_overlay_view(overlay_view_handle) };
+    let page = unsafe { retained_page(page_handle) };
+    let (Some(view), Some(overlay_view), Some(page)) = (view, overlay_view, page) else {
+        return;
+    };
+    let _ = unsafe {
+        with_provider(context, "pdf_page_overlay_view_provider_will_display", |provider| {
+            provider.will_display_overlay_view(view, overlay_view, page);
+        })
+    };
 }
 
 /// # Safety
-/// This is an extern "C" callback invoked by Swift. The caller must pass valid, non-null
-/// `context`, `view_handle`, `overlay_view_handle`, and `page_handle` pointers. They must
-/// all point to valid PDFPageOverlayViewProvider/PDFView/PDFPageOverlayView/PDFPage objects
-/// respectively, or be null (except context). Panics are caught to prevent unwinding across
-/// the FFI boundary.
+/// This is an extern "C" callback invoked by Swift. `context` must be null or the provider's
+/// `CallbackContext` pointer, and `view_handle`, `overlay_view_handle` and `page_handle` must
+/// be retained PDFView, PDFPageOverlayView and PDFPage pointers from Swift (or null); they are
+/// released even when the provider is gone. Panics are caught to prevent unwinding across the
+/// FFI boundary.
 unsafe extern "C" fn pdf_page_overlay_view_provider_will_end_displaying_trampoline(
     context: *mut c_void,
     view_handle: *mut c_void,
     overlay_view_handle: *mut c_void,
     page_handle: *mut c_void,
 ) {
-    let _ = catch_unwind(AssertUnwindSafe(|| {
-        // SAFETY: caller is responsible for providing valid context, view_handle, overlay_view_handle, and page_handle pointers
-        let Some(state) = (unsafe { provider_state(context) }) else {
-            return;
-        };
-        let Some(view) = (unsafe { retained_view(view_handle) }) else {
-            return;
-        };
-        let Some(overlay_view) = (unsafe { retained_overlay_view(overlay_view_handle) }) else {
-            return;
-        };
-        let Some(page) = (unsafe { retained_page(page_handle) }) else {
-            return;
-        };
-        state
-            .provider
-            .will_end_displaying_overlay_view(view, overlay_view, page);
-    }));
+    let view = unsafe { retained_view(view_handle) };
+    let overlay_view = unsafe { retained_overlay_view(overlay_view_handle) };
+    let page = unsafe { retained_page(page_handle) };
+    let (Some(view), Some(overlay_view), Some(page)) = (view, overlay_view, page) else {
+        return;
+    };
+    let _ = unsafe {
+        with_provider(
+            context,
+            "pdf_page_overlay_view_provider_will_end_displaying",
+            |provider| {
+                provider.will_end_displaying_overlay_view(view, overlay_view, page);
+            },
+        )
+    };
 }

@@ -72,6 +72,10 @@ required-features = ["async"]
 name = "async_find_stream_tests"
 required-features = ["async"]
 
+[[test]]
+name = "main_thread"
+harness = false
+
 [profile.release]
 debug = "full"
 strip = "none"

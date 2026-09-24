@@ -20,17 +20,31 @@ final class PDFRustPageOverlayViewProvider: NSObject, PDFPageOverlayViewProvider
     let overlayCallback: PDFRustPageOverlayViewProviderOverlayCallback?
     let willDisplayCallback: PDFRustPageOverlayViewProviderDisplayCallback?
     let willEndDisplayingCallback: PDFRustPageOverlayViewProviderDisplayCallback?
+    private let contextRelease: PDFDocumentDelegateContextCallback?
 
     init(
         context: UnsafeMutableRawPointer?,
         overlayCallback: PDFRustPageOverlayViewProviderOverlayCallback?,
         willDisplayCallback: PDFRustPageOverlayViewProviderDisplayCallback?,
-        willEndDisplayingCallback: PDFRustPageOverlayViewProviderDisplayCallback?
+        willEndDisplayingCallback: PDFRustPageOverlayViewProviderDisplayCallback?,
+        contextRetain: PDFDocumentDelegateContextCallback?,
+        contextRelease: PDFDocumentDelegateContextCallback?
     ) {
         self.context = context
         self.overlayCallback = overlayCallback
         self.willDisplayCallback = willDisplayCallback
         self.willEndDisplayingCallback = willEndDisplayingCallback
+        self.contextRelease = contextRelease
+        super.init()
+        if let context {
+            contextRetain?(context)
+        }
+    }
+
+    deinit {
+        if let context {
+            contextRelease?(context)
+        }
     }
 
     @objc(pdfView:overlayViewForPage:)
@@ -61,6 +75,8 @@ public func pdf_page_overlay_view_provider_new(
     _ overlayCallback: PDFRustPageOverlayViewProviderOverlayCallback?,
     _ willDisplayCallback: PDFRustPageOverlayViewProviderDisplayCallback?,
     _ willEndDisplayingCallback: PDFRustPageOverlayViewProviderDisplayCallback?,
+    _ contextRetain: @escaping PDFDocumentDelegateContextCallback,
+    _ contextRelease: @escaping PDFDocumentDelegateContextCallback,
     _ outProvider: UnsafeMutablePointer<UnsafeMutableRawPointer?>?,
     _ outError: UnsafeMutablePointer<UnsafeMutablePointer<CChar>?>?
 ) -> Int32 {
@@ -72,7 +88,9 @@ public func pdf_page_overlay_view_provider_new(
             context: context,
             overlayCallback: overlayCallback,
             willDisplayCallback: willDisplayCallback,
-            willEndDisplayingCallback: willEndDisplayingCallback
+            willEndDisplayingCallback: willEndDisplayingCallback,
+            contextRetain: contextRetain,
+            contextRelease: contextRelease
         )
         outProvider.pointee = pdf_retain_page_overlay_view_provider(provider)
     }

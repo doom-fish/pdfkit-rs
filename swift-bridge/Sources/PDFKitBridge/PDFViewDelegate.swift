@@ -36,6 +36,7 @@ final class PDFRustViewDelegate: NSObject, PDFViewDelegate {
     let performFindCallback: PDFRustViewDelegateBoolCallback?
     let performGoToPageCallback: PDFRustViewDelegateBoolCallback?
     let remoteGoToCallback: PDFRustViewDelegateRemoteGoToCallback?
+    private let contextRelease: PDFDocumentDelegateContextCallback?
 
     init(
         context: UnsafeMutableRawPointer?,
@@ -45,7 +46,9 @@ final class PDFRustViewDelegate: NSObject, PDFViewDelegate {
         performPrintCallback: PDFRustViewDelegateBoolCallback?,
         performFindCallback: PDFRustViewDelegateBoolCallback?,
         performGoToPageCallback: PDFRustViewDelegateBoolCallback?,
-        remoteGoToCallback: PDFRustViewDelegateRemoteGoToCallback?
+        remoteGoToCallback: PDFRustViewDelegateRemoteGoToCallback?,
+        contextRetain: PDFDocumentDelegateContextCallback?,
+        contextRelease: PDFDocumentDelegateContextCallback?
     ) {
         self.context = context
         self.linkClickCallback = linkClickCallback
@@ -55,6 +58,17 @@ final class PDFRustViewDelegate: NSObject, PDFViewDelegate {
         self.performFindCallback = performFindCallback
         self.performGoToPageCallback = performGoToPageCallback
         self.remoteGoToCallback = remoteGoToCallback
+        self.contextRelease = contextRelease
+        super.init()
+        if let context {
+            contextRetain?(context)
+        }
+    }
+
+    deinit {
+        if let context {
+            contextRelease?(context)
+        }
     }
 
     private func defaultPrintJobTitle(for view: PDFView) -> String {
@@ -125,6 +139,8 @@ public func pdf_view_delegate_new(
     _ performFindCallback: PDFRustViewDelegateBoolCallback?,
     _ performGoToPageCallback: PDFRustViewDelegateBoolCallback?,
     _ remoteGoToCallback: PDFRustViewDelegateRemoteGoToCallback?,
+    _ contextRetain: @escaping PDFDocumentDelegateContextCallback,
+    _ contextRelease: @escaping PDFDocumentDelegateContextCallback,
     _ outDelegate: UnsafeMutablePointer<UnsafeMutableRawPointer?>?,
     _ outError: UnsafeMutablePointer<UnsafeMutablePointer<CChar>?>?
 ) -> Int32 {
@@ -140,7 +156,9 @@ public func pdf_view_delegate_new(
             performPrintCallback: performPrintCallback,
             performFindCallback: performFindCallback,
             performGoToPageCallback: performGoToPageCallback,
-            remoteGoToCallback: remoteGoToCallback
+            remoteGoToCallback: remoteGoToCallback,
+            contextRetain: contextRetain,
+            contextRelease: contextRelease
         )
         outDelegate.pointee = pdf_retain_view_delegate(delegate)
     }

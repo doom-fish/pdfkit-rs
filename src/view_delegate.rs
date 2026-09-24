@@ -1,13 +1,15 @@
 use std::ffi::{CStr, CString};
 use std::fmt;
 use std::os::raw::{c_char, c_void};
-use std::panic::{catch_unwind, AssertUnwindSafe};
 use std::ptr;
+
+use doom_fish_utils::callback_context::CallbackContext;
 
 use crate::action_remote_goto::PdfActionRemoteGoTo;
 use crate::error::Result;
 use crate::ffi;
 use crate::handle::ObjectHandle;
+use crate::main_thread::MainThreadCell;
 use crate::view::PdfView;
 
 /// Mirrors the `PDFViewDelegate` callback surface.
@@ -52,28 +54,26 @@ pub trait PdfViewDelegate: 'static {
     }
 }
 
-struct DelegateState {
-    delegate: Box<dyn PdfViewDelegate>,
-}
+type DelegateContext = CallbackContext<MainThreadCell<Box<dyn PdfViewDelegate>>>;
 
 /// Wraps `PDFViewDelegateHandle`.
 pub struct PdfViewDelegateHandle {
     handle: ObjectHandle,
-    _state: Box<DelegateState>,
+    context: DelegateContext,
 }
 
 impl PdfViewDelegateHandle {
     /// Registers a Rust implementation of `PDFViewDelegate`.
     pub fn new(delegate: impl PdfViewDelegate) -> Result<Self> {
-        let mut state = Box::new(DelegateState {
-            delegate: Box::new(delegate),
-        });
-        let context = ptr::addr_of_mut!(*state).cast::<c_void>();
+        let context = DelegateContext::new(MainThreadCell::new(
+            Box::new(delegate) as Box<dyn PdfViewDelegate>,
+            "PdfViewDelegateHandle",
+        )?);
         let mut out_delegate = ptr::null_mut();
         let mut out_error = ptr::null_mut();
         let status = unsafe {
             ffi::pdf_view_delegate_new(
-                context,
+                context.as_ptr(),
                 Some(pdf_view_delegate_link_click_trampoline),
                 Some(pdf_view_delegate_scale_factor_trampoline),
                 Some(pdf_view_delegate_print_job_title_trampoline),
@@ -81,19 +81,25 @@ impl PdfViewDelegateHandle {
                 Some(pdf_view_delegate_perform_find_trampoline),
                 Some(pdf_view_delegate_perform_go_to_page_trampoline),
                 Some(pdf_view_delegate_remote_goto_trampoline),
+                DelegateContext::RETAIN,
+                DelegateContext::RELEASE,
                 &raw mut out_delegate,
                 &raw mut out_error,
             )
         };
         crate::util::status_result(status, out_error)?;
-        Ok(Self {
-            handle: crate::util::required_handle(out_delegate, "PDFViewDelegate")?,
-            _state: state,
-        })
+        let handle = crate::util::required_handle(out_delegate, "PDFViewDelegate")?;
+        Ok(Self { handle, context })
     }
 
     pub(crate) fn as_handle_ptr(&self) -> *mut c_void {
         self.handle.as_ptr()
+    }
+}
+
+impl Drop for PdfViewDelegateHandle {
+    fn drop(&mut self) {
+        self.context.deactivate();
     }
 }
 
@@ -112,11 +118,17 @@ fn duplicate_string(value: Option<String>) -> *mut c_char {
         })
 }
 
-/// # Safety
-/// The caller must ensure that `context` is either null or a valid pointer to `DelegateState`
-/// that was obtained from `Box::into_raw()` and has not yet been freed.
-unsafe fn delegate_state(context: *mut c_void) -> Option<&'static mut DelegateState> {
-    context.cast::<DelegateState>().as_mut()
+unsafe fn with_delegate<R>(
+    context: *mut c_void,
+    site: &str,
+    f: impl FnOnce(&mut dyn PdfViewDelegate) -> R,
+) -> Option<R> {
+    unsafe {
+        DelegateContext::with(context, site, |cell| {
+            cell.with(|delegate| f(delegate.as_mut()))
+        })
+    }
+    .flatten()
 }
 
 /// Helper to convert a retained PDFView pointer to a PdfView.
@@ -138,137 +150,145 @@ unsafe fn retained_remote_goto_action(handle: *mut c_void) -> Option<PdfActionRe
 }
 
 /// # Safety
-/// This is an extern "C" callback invoked by Swift. The caller must pass a valid, non-null
-/// `context` pointer that points to `DelegateState`, and `view_handle` must be a retained
-/// PDFView pointer from Swift (or null). The caller must pass a valid C string for `url`
-/// (or null). Panics are caught to prevent unwinding across the FFI boundary.
+/// This is an extern "C" callback invoked by Swift. `context` must be null or the delegate's
+/// `CallbackContext` pointer, `view_handle` must be a retained PDFView pointer from Swift (or
+/// null), and `url` must be a valid C string (or null). Panics are caught to prevent unwinding
+/// across the FFI boundary.
 unsafe extern "C" fn pdf_view_delegate_link_click_trampoline(
     context: *mut c_void,
     view_handle: *mut c_void,
     url: *const c_char,
 ) -> i32 {
-    catch_unwind(AssertUnwindSafe(|| {
-        // SAFETY: caller is responsible for providing valid context and view_handle pointers
-        let Some(state) = (unsafe { delegate_state(context) }) else {
-            return 0;
-        };
-        let Some(view) = (unsafe { retained_view(view_handle) }) else {
-            return 0;
-        };
-        let Some(url) = (!url.is_null()).then(|| unsafe {
-            // SAFETY: checked for null; Swift guarantees valid C string
-            CStr::from_ptr(url).to_string_lossy().into_owned()
-        }) else {
-            return 0;
-        };
-        i32::from(state.delegate.handle_link_click(view, &url))
-    }))
-    .unwrap_or(0)
+    let Some(view) = (unsafe { retained_view(view_handle) }) else {
+        return 0;
+    };
+    if url.is_null() {
+        return 0;
+    }
+    unsafe {
+        with_delegate(context, "pdf_view_delegate_link_click", |delegate| {
+            let url = CStr::from_ptr(url).to_string_lossy();
+            delegate.handle_link_click(view, &url)
+        })
+    }
+    .map_or(0, i32::from)
 }
 
 /// # Safety
-/// This is an extern "C" callback invoked by Swift. The caller must pass a valid, non-null
-/// `context` pointer that points to `DelegateState`, and `view_handle` must be a retained
-/// PDFView pointer from Swift (or null). Panics are caught to prevent unwinding across the
-/// FFI boundary.
+/// This is an extern "C" callback invoked by Swift. `context` must be null or the delegate's
+/// `CallbackContext` pointer, and `view_handle` must be a retained PDFView pointer from Swift
+/// (or null). Panics are caught to prevent unwinding across the FFI boundary.
 unsafe extern "C" fn pdf_view_delegate_scale_factor_trampoline(
     context: *mut c_void,
     view_handle: *mut c_void,
     scale_factor: f64,
 ) -> f64 {
-    catch_unwind(AssertUnwindSafe(|| {
-        // SAFETY: caller is responsible for providing valid context and view_handle pointers
-        let Some(state) = (unsafe { delegate_state(context) }) else {
-            return scale_factor.clamp(0.1, 10.0);
-        };
-        let Some(view) = (unsafe { retained_view(view_handle) }) else {
-            return scale_factor.clamp(0.1, 10.0);
-        };
-        state.delegate.will_change_scale_factor(view, scale_factor)
-    }))
-    .unwrap_or_else(|_| scale_factor.clamp(0.1, 10.0))
+    let fallback = scale_factor.clamp(0.1, 10.0);
+    let Some(view) = (unsafe { retained_view(view_handle) }) else {
+        return fallback;
+    };
+    unsafe {
+        with_delegate(context, "pdf_view_delegate_scale_factor", |delegate| {
+            delegate.will_change_scale_factor(view, scale_factor)
+        })
+    }
+    .unwrap_or(fallback)
 }
 
+/// # Safety
+/// This is an extern "C" callback invoked by Swift. `context` must be null or the delegate's
+/// `CallbackContext` pointer, and `view_handle` must be a retained PDFView pointer from Swift
+/// (or null). The returned pointer must be freed by the Swift caller.
 unsafe extern "C" fn pdf_view_delegate_print_job_title_trampoline(
     context: *mut c_void,
     view_handle: *mut c_void,
 ) -> *mut c_char {
-    catch_unwind(AssertUnwindSafe(|| {
-        let Some(state) = (unsafe { delegate_state(context) }) else {
-            return ptr::null_mut();
-        };
-        let Some(view) = (unsafe { retained_view(view_handle) }) else {
-            return ptr::null_mut();
-        };
-        duplicate_string(state.delegate.print_job_title(view))
-    }))
+    let Some(view) = (unsafe { retained_view(view_handle) }) else {
+        return ptr::null_mut();
+    };
+    unsafe {
+        with_delegate(context, "pdf_view_delegate_print_job_title", |delegate| {
+            duplicate_string(delegate.print_job_title(view))
+        })
+    }
     .unwrap_or(ptr::null_mut())
 }
 
+/// # Safety
+/// This is an extern "C" callback invoked by Swift. `context` must be null or the delegate's
+/// `CallbackContext` pointer, and `view_handle` must be a retained PDFView pointer from Swift
+/// (or null).
 unsafe extern "C" fn pdf_view_delegate_perform_print_trampoline(
     context: *mut c_void,
     view_handle: *mut c_void,
 ) -> i32 {
-    catch_unwind(AssertUnwindSafe(|| {
-        let Some(state) = (unsafe { delegate_state(context) }) else {
-            return 0;
-        };
-        let Some(view) = (unsafe { retained_view(view_handle) }) else {
-            return 0;
-        };
-        i32::from(state.delegate.perform_print(view))
-    }))
-    .unwrap_or(0)
+    let Some(view) = (unsafe { retained_view(view_handle) }) else {
+        return 0;
+    };
+    unsafe {
+        with_delegate(context, "pdf_view_delegate_perform_print", |delegate| {
+            delegate.perform_print(view)
+        })
+    }
+    .map_or(0, i32::from)
 }
 
+/// # Safety
+/// This is an extern "C" callback invoked by Swift. `context` must be null or the delegate's
+/// `CallbackContext` pointer, and `view_handle` must be a retained PDFView pointer from Swift
+/// (or null).
 unsafe extern "C" fn pdf_view_delegate_perform_find_trampoline(
     context: *mut c_void,
     view_handle: *mut c_void,
 ) -> i32 {
-    catch_unwind(AssertUnwindSafe(|| {
-        let Some(state) = (unsafe { delegate_state(context) }) else {
-            return 0;
-        };
-        let Some(view) = (unsafe { retained_view(view_handle) }) else {
-            return 0;
-        };
-        i32::from(state.delegate.perform_find(view))
-    }))
-    .unwrap_or(0)
+    let Some(view) = (unsafe { retained_view(view_handle) }) else {
+        return 0;
+    };
+    unsafe {
+        with_delegate(context, "pdf_view_delegate_perform_find", |delegate| {
+            delegate.perform_find(view)
+        })
+    }
+    .map_or(0, i32::from)
 }
 
+/// # Safety
+/// This is an extern "C" callback invoked by Swift. `context` must be null or the delegate's
+/// `CallbackContext` pointer, and `view_handle` must be a retained PDFView pointer from Swift
+/// (or null).
 unsafe extern "C" fn pdf_view_delegate_perform_go_to_page_trampoline(
     context: *mut c_void,
     view_handle: *mut c_void,
 ) -> i32 {
-    catch_unwind(AssertUnwindSafe(|| {
-        let Some(state) = (unsafe { delegate_state(context) }) else {
-            return 0;
-        };
-        let Some(view) = (unsafe { retained_view(view_handle) }) else {
-            return 0;
-        };
-        i32::from(state.delegate.perform_go_to_page(view))
-    }))
-    .unwrap_or(0)
+    let Some(view) = (unsafe { retained_view(view_handle) }) else {
+        return 0;
+    };
+    unsafe {
+        with_delegate(context, "pdf_view_delegate_perform_go_to_page", |delegate| {
+            delegate.perform_go_to_page(view)
+        })
+    }
+    .map_or(0, i32::from)
 }
 
+/// # Safety
+/// This is an extern "C" callback invoked by Swift. `context` must be null or the delegate's
+/// `CallbackContext` pointer, and `view_handle` and `action_handle` must be retained pointers
+/// from Swift (or null); both are released even when the delegate is gone.
 unsafe extern "C" fn pdf_view_delegate_remote_goto_trampoline(
     context: *mut c_void,
     view_handle: *mut c_void,
     action_handle: *mut c_void,
 ) -> i32 {
-    catch_unwind(AssertUnwindSafe(|| {
-        let Some(state) = (unsafe { delegate_state(context) }) else {
-            return 0;
-        };
-        let Some(view) = (unsafe { retained_view(view_handle) }) else {
-            return 0;
-        };
-        let Some(action) = (unsafe { retained_remote_goto_action(action_handle) }) else {
-            return 0;
-        };
-        i32::from(state.delegate.open_pdf_for_remote_goto_action(view, action))
-    }))
-    .unwrap_or(0)
+    let view = unsafe { retained_view(view_handle) };
+    let action = unsafe { retained_remote_goto_action(action_handle) };
+    let (Some(view), Some(action)) = (view, action) else {
+        return 0;
+    };
+    unsafe {
+        with_delegate(context, "pdf_view_delegate_remote_goto", |delegate| {
+            delegate.open_pdf_for_remote_goto_action(view, action)
+        })
+    }
+    .map_or(0, i32::from)
 }

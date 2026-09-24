@@ -24,6 +24,8 @@ unsafe extern "C" {
         overlay_callback: PdfPageOverlayViewProviderOverlayCallback,
         will_display_callback: PdfPageOverlayViewProviderDisplayCallback,
         will_end_displaying_callback: PdfPageOverlayViewProviderDisplayCallback,
+        context_retain: super::document_delegate::PdfDocumentDelegateContextCallback,
+        context_release: super::document_delegate::PdfDocumentDelegateContextCallback,
         out_provider: *mut *mut c_void,
         out_error_message: *mut *mut c_char,
     ) -> i32;

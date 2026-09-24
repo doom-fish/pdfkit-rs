@@ -8,14 +8,6 @@ const TINY_PNG: &[u8] = &[
     254, 2, 254, 167, 53, 129, 132, 0, 0, 0, 0, 73, 69, 78, 68, 174, 66, 96, 130,
 ];
 
-struct NoopViewDelegate;
-
-impl PdfViewDelegate for NoopViewDelegate {}
-
-struct NoopPageOverlayProvider;
-
-impl PdfPageOverlayViewProvider for NoopPageOverlayProvider {}
-
 #[test]
 fn new_string_and_utility_enums_are_exposed() {
     assert_eq!(PdfAnnotationSubtype::Link.name(), "/Link");
@@ -118,7 +110,7 @@ fn action_reset_form_roundtrips_fields() -> Result<()> {
 }
 
 #[test]
-fn page_image_initialization_and_view_delegate_handles_work() -> Result<()> {
+fn page_image_initialization_applies_the_media_box() -> Result<()> {
     let media_box = PdfRect {
         x: 0.0,
         y: 0.0,
@@ -132,21 +124,5 @@ fn page_image_initialization_and_view_delegate_handles_work() -> Result<()> {
             .with_upscale_if_smaller(true),
     )?;
     assert_eq!(page.bounds(DisplayBox::MediaBox), media_box);
-
-    let view = PdfView::new(PdfSize {
-        width: 320.0,
-        height: 240.0,
-    })?;
-    let delegate = PdfViewDelegateHandle::new(NoopViewDelegate)?;
-    view.set_delegate(Some(&delegate))?;
-
-    let provider = PdfPageOverlayViewProviderHandle::new(NoopPageOverlayProvider)?;
-    view.set_page_overlay_view_provider(Some(&provider))?;
-
-    let _overlay = PdfPageOverlayView::new(PdfSize {
-        width: 32.0,
-        height: 24.0,
-    })?;
-    let _ = view.area_of_interest_for_point(common::word_point());
     Ok(())
 }

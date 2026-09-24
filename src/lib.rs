@@ -40,6 +40,7 @@ mod document_delegate;
 mod error;
 mod ffi;
 mod handle;
+mod main_thread;
 mod notifications;
 mod outline;
 mod page;

@@ -21,6 +21,7 @@ impl PdfThumbnailView {
 
     /// Wraps `PDFThumbnailView(frame:)`.
     pub fn new(size: PdfSize) -> Result<Self> {
+        crate::main_thread::require_main_thread("PDFThumbnailView")?;
         let mut out_view = ptr::null_mut();
         let mut out_error = ptr::null_mut();
         let status = unsafe {
