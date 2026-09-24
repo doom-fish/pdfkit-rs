@@ -9,8 +9,9 @@
 //! stream backed by [`doom_fish_utils::stream::BoundedAsyncStream`].
 //!
 //! The stream emits synthetic `DidBeginFind` / `DidEndFind` notifications around
-//! the match sequence. Dropping it does not wait for the search; results that
-//! arrive afterwards are discarded.
+//! the match sequence. Every match is delivered: when `capacity` events are
+//! buffered, delivery waits for the consumer. Dropping the stream does not wait
+//! for the search; results that arrive afterwards are discarded.
 //!
 //! # Example
 //!
@@ -124,7 +125,7 @@ pub enum PdfDocumentFindEvent {
 }
 
 fn push_error(sender: &AsyncStreamSender<PdfDocumentFindEvent>, error: PdfKitError) {
-    sender.push(PdfDocumentFindEvent::Failed(error));
+    let _ = sender.push_or_block(PdfDocumentFindEvent::Failed(error));
 }
 
 /// Async stream of `PDFDocument` find notifications and match snapshots.
@@ -230,12 +231,17 @@ unsafe extern "C" fn find_result_trampoline(
         let json = unsafe { CStr::from_ptr(json) }.to_string_lossy();
         match serde_json::from_str::<Vec<PdfDocumentFindMatch>>(&json) {
             Ok(matches) => {
-                for found in matches {
-                    sender.push(PdfDocumentFindEvent::Match(found));
+                let events = matches
+                    .into_iter()
+                    .map(PdfDocumentFindEvent::Match)
+                    .chain([PdfDocumentFindEvent::Notification(
+                        PdfDocumentNotification::DidEndFind,
+                    )]);
+                for event in events {
+                    if sender.push_or_block(event).is_err() {
+                        return;
+                    }
                 }
-                sender.push(PdfDocumentFindEvent::Notification(
-                    PdfDocumentNotification::DidEndFind,
-                ));
             }
             Err(error) => push_error(
                 &sender,

@@ -118,3 +118,39 @@ fn find_streams_can_move_between_threads() {
     fn assert_send<T: Send>() {}
     assert_send::<PdfDocumentFindStream>();
 }
+
+#[test]
+fn a_full_buffer_delays_matches_instead_of_dropping_them() -> Result<()> {
+    let document = common::fixture_document()?;
+    let expected = document
+        .page(0)
+        .and_then(|page| page.string())
+        .unwrap_or_default()
+        .matches('l')
+        .count();
+    assert!(expected > 1);
+
+    let stream =
+        PdfDocumentFindStream::find_string(&document, "l", PdfDocumentFindOptions::NONE, 1)?;
+    thread::sleep(Duration::from_millis(200));
+    let events = collect_events(&stream);
+
+    let matches = events
+        .iter()
+        .filter(|event| matches!(event, PdfDocumentFindEvent::Match(_)))
+        .count();
+    assert_eq!(matches, expected);
+    assert_eq!(
+        events.first(),
+        Some(&PdfDocumentFindEvent::Notification(
+            PdfDocumentNotification::DidBeginFind
+        ))
+    );
+    assert_eq!(
+        events.last(),
+        Some(&PdfDocumentFindEvent::Notification(
+            PdfDocumentNotification::DidEndFind
+        ))
+    );
+    Ok(())
+}
