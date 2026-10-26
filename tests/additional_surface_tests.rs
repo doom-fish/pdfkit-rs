@@ -105,7 +105,7 @@ fn action_reset_form_roundtrips_fields() -> Result<()> {
     );
 
     reset_form.clear_fields()?;
-    assert!(reset_form.fields()?.is_empty());
+    assert_eq!(reset_form.fields()?, [] as [std::string::String; 0]);
     Ok(())
 }
 
